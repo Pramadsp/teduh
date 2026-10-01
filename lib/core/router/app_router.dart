@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/reports/presentation/screens/report_screen.dart';
 import '../../features/transactions/presentation/screens/transaction_list_screen.dart';
 import 'shell_scaffold.dart';
 
@@ -13,9 +15,7 @@ final appRouter = GoRouter(
       routes: [
         GoRoute(
           path: '/dashboard',
-          builder: (context, state) => const Scaffold(
-            body: Center(child: Text('Beranda')),
-          ),
+          builder: (context, state) => const DashboardScreen(),
         ),
         GoRoute(
           path: '/transactions',
@@ -23,9 +23,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/reports',
-          builder: (context, state) => const Scaffold(
-            body: Center(child: Text('Laporan')),
-          ),
+          builder: (context, state) => const ReportScreen(),
         ),
         GoRoute(
           path: '/settings',
