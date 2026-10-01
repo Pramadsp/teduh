@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/reports/presentation/screens/report_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/transactions/presentation/screens/transaction_list_screen.dart';
 import 'shell_scaffold.dart';
 
@@ -27,9 +27,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/settings',
-          builder: (context, state) => const Scaffold(
-            body: Center(child: Text('Pengaturan')),
-          ),
+          builder: (context, state) => const SettingsScreen(),
         ),
       ],
     ),
