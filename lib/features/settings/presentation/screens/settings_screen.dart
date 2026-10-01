@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teduh/core/theme/app_colors.dart';
+import 'package:teduh/features/auth/data/auth_service.dart';
 import 'package:teduh/features/categories/presentation/screens/category_list_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -32,6 +33,17 @@ class SettingsScreen extends ConsumerWidget {
                   builder: (context) => const CategoryListScreen(),
                 ),
               );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const CircleAvatar(
+              backgroundColor: AppColors.sand,
+              child: Icon(Icons.logout, color: AppColors.expense),
+            ),
+            title: const Text('Keluar Akun', style: TextStyle(color: AppColors.expense)),
+            onTap: () async {
+              await AuthService().logout();
             },
           ),
           const Divider(),

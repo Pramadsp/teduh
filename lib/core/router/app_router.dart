@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import '../../features/auth/presentation/widgets/auth_gate.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/reports/presentation/screens/report_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -10,7 +11,9 @@ final appRouter = GoRouter(
   routes: [
     ShellRoute(
       builder: (context, state, child) {
-        return ShellScaffold(child: child);
+        return AuthGate(
+          child: ShellScaffold(child: child),
+        );
       },
       routes: [
         GoRoute(
