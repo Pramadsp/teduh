@@ -1,14 +1,26 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:teduh/core/utils/currency_input_formatter.dart';
 import 'package:teduh/core/utils/formatters.dart';
 import 'package:teduh/features/categories/data/category_repository.dart';
 import 'package:teduh/features/categories/domain/category_model.dart';
 import 'package:teduh/features/transactions/data/transaction_repository.dart';
 import 'package:teduh/features/transactions/domain/transaction_model.dart';
+import 'package:teduh/features/transactions/presentation/screens/transaction_list_screen.dart';
 
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('id_ID', null);
+  });
+
+  group('CurrencyInputFormatter Tests', () {
+    test('parseAmount parses formatted string to integer', () {
+      expect(CurrencyInputFormatter.parseAmount('50.000'), 50000);
+      expect(CurrencyInputFormatter.parseAmount('Rp 1.250.000'), 1250000);
+      expect(CurrencyInputFormatter.parseAmount(''), 0);
+    });
   });
 
   group('CurrencyUtils & DateUtilsId Tests', () {
@@ -70,6 +82,23 @@ void main() {
       await repo.deleteTransaction('tx_1');
       txs = await repo.getTransactions();
       expect(txs.isEmpty, isTrue);
+    });
+  });
+
+  group('Transaction CRUD Widget Tests', () {
+    testWidgets('TransactionListScreen displays FAB and renders correctly',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: TransactionListScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(find.text('Daftar Transaksi'), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsOneWidget);
     });
   });
 }

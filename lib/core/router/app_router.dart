@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/transactions/presentation/screens/transaction_list_screen.dart';
 import 'shell_scaffold.dart';
 
 final appRouter = GoRouter(
@@ -18,9 +19,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/transactions',
-          builder: (context, state) => const Scaffold(
-            body: Center(child: Text('Transaksi')),
-          ),
+          builder: (context, state) => const TransactionListScreen(),
         ),
         GoRoute(
           path: '/reports',
