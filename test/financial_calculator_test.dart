@@ -41,6 +41,7 @@ void main() {
       final txs = [
         Transaction(
           id: '1',
+          title: 'Gaji Bulanan',
           type: TransactionType.income,
           amount: 5000000,
           categoryId: 'inc_1',
@@ -53,6 +54,7 @@ void main() {
         ),
         Transaction(
           id: '2',
+          title: 'Belanja Bulanan',
           type: TransactionType.expense,
           amount: 1500000,
           categoryId: 'exp_1',
@@ -65,6 +67,7 @@ void main() {
         ),
         Transaction(
           id: '3',
+          title: 'Makan',
           type: TransactionType.expense,
           amount: 500000,
           categoryId: 'exp_2',

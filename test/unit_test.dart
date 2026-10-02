@@ -63,6 +63,7 @@ void main() {
 
       final tx = Transaction(
         id: 'tx_1',
+        title: 'Makan Nasi Goreng',
         type: TransactionType.expense,
         amount: 50000,
         categoryId: 'cat_exp_1',

@@ -151,14 +151,14 @@ class TransactionListScreen extends ConsumerWidget {
                           child: Icon(icon, color: color, size: 20),
                         ),
                         title: Text(
-                          tx.categoryName,
+                          tx.title,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: AppColors.ink,
                           ),
                         ),
                         subtitle: Text(
-                          '${tx.createdByName}${tx.note != null ? ' • ${tx.note}' : ''}',
+                          '${tx.categoryName} • ${tx.createdByName}${tx.note != null && tx.note!.isNotEmpty ? ' (${tx.note})' : ''}',
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.ink.withValues(alpha: 0.6),

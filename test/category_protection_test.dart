@@ -30,6 +30,7 @@ void main() {
       await txRepo.addTransaction(
         Transaction(
           id: 'tx_test_1',
+          title: 'Makan & Minum',
           type: TransactionType.expense,
           amount: 25000,
           categoryId: 'cat_exp_1',
@@ -62,7 +63,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      final deleteIconButton = find.byIcon(Icons.delete_outline).first;
+      final deleteIconButton = find.byIcon(Icons.delete_outline_rounded).first;
       await tester.tap(deleteIconButton);
       await tester.pumpAndSettle();
 

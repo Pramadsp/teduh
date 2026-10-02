@@ -2,6 +2,7 @@ enum TransactionType { income, expense }
 
 class Transaction {
   final String id;
+  final String title;
   final TransactionType type;
   final int amount; // dalam integer Rupiah, selalu positif
   final String categoryId;
@@ -15,6 +16,7 @@ class Transaction {
 
   const Transaction({
     required this.id,
+    required this.title,
     required this.type,
     required this.amount,
     required this.categoryId,
@@ -30,6 +32,7 @@ class Transaction {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'title': title,
       'type': type.name,
       'amount': amount,
       'categoryId': categoryId,
@@ -46,6 +49,7 @@ class Transaction {
   factory Transaction.fromMap(Map<String, dynamic> map) {
     return Transaction(
       id: map['id'] as String,
+      title: (map['title'] as String?) ?? (map['categoryName'] as String? ?? 'Transaksi'),
       type: TransactionType.values.firstWhere(
         (e) => e.name == map['type'],
         orElse: () => TransactionType.expense,

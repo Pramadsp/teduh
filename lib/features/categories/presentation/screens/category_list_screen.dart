@@ -51,6 +51,16 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SegmentedButton<CategoryType>(
+                    style: SegmentedButton.styleFrom(
+                      selectedBackgroundColor: selectedType == CategoryType.expense ? AppColors.expense : AppColors.income,
+                      selectedForegroundColor: AppColors.cream,
+                      backgroundColor: AppColors.sand,
+                      foregroundColor: AppColors.ink,
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                      side: BorderSide(
+                        color: AppColors.sageDark.withValues(alpha: 0.2),
+                      ),
+                    ),
                     segments: const [
                       ButtonSegment(
                         value: CategoryType.expense,
@@ -221,8 +231,9 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
           controller: _tabController,
           indicatorColor: AppColors.sageDark,
           labelColor: AppColors.sageDark,
-          unselectedLabelColor: AppColors.ink.withValues(alpha: 0.6),
+          unselectedLabelColor: AppColors.ink,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
           tabs: const [
             Tab(text: 'Pengeluaran'),
             Tab(text: 'Pemasukan'),

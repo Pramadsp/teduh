@@ -1,9 +1,9 @@
 # Catatan Handoff - Proyek Teduh
 
 **Tanggal Handoff:** 2 Oktober 2026  
-**Progress Terakhir:** Fase 0 s.d. Fase 5 Selesai + Polishing & Perombakan UI v0.5.1  
+**Progress Terakhir:** Fase 0 s.d. Fase 6 Selesai (`v0.6.0`)  
 **Repository:** `https://github.com/Pramadsp/teduh.git` (Branch `main`)  
-**Versi Terakhir:** `0.5.1+6`
+**Versi Terakhir:** `0.6.0+7`
 
 ---
 
@@ -14,7 +14,16 @@
 4. **Fase 3 (Dashboard & Laporan):** Selesai (`v0.3.0`) - Filter WIB (Harian, Mingguan, Bulanan), kalkulator saldo, Donut Chart `fl_chart`.
 5. **Fase 4 (Manajemen Kategori):** Selesai (`v0.4.0`) - Tab Kelola Kategori di Pengaturan, dialog tambah/edit, proteksi hapus kategori terpakai.
 6. **Fase 5 (Firebase & Household):** Selesai (`v0.5.0`) - Firebase Auth (Email/Pass), Household 2 orang dengan kode 6 karakter, Firestore Real-Time Stream (`snapshots()`) & Offline Persistence.
-7. **Penyelarasan UI Palette (`v0.5.1`):** Seluruh layar (Beranda, Transaksi, Laporan, Pengaturan, Login, Form Modal) telah diselaraskan dengan color palette & feel visual `ProfileScreen` (Krem, Pasir, Sage Dark, Terakota, Tinta) + Perbaikan kontras tab Laporan.
+7. **Perombakan UI Palette & Perbaikan Form (`v0.5.1` & `v0.6.0`):** Theme ProfileScreen (Krem, Pasir, Sage Dark, Terakota, Tinta) diterapkan seragam di semua layar. Peningkatan kontras tab unselected, DatePicker theme, serta penambahan field wajib **Nama Transaksi (`title`)**.
+8. **Fase 6 (Ekspor PDF & Excel):** Selesai (`v0.6.0`) - Generator PDF (`pdf` + `printing`) dengan ringkasan & tabel multi-halaman rapi, Generator Excel (`excel`) dengan nominal bertipe Integer, terintegrasi dengan `open_filex` & `share_plus`.
+
+---
+
+## 🔜 Rencana Selanjutnya (Fase 7 - Penyempurnaan & Asset Polishing):
+- Custom Adaptive Icon aplikasi Teduh (`flutter_launcher_icons`).
+- Search Bar / Filter transaksi berdasarkan nama/catatan/kategori di `TransactionListScreen`.
+- Empty & Loading State polishing di seluruh layar.
+- Pencegahan overflow pada nominal angka besar.
 
 ---
 

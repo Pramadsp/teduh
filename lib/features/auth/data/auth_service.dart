@@ -50,6 +50,21 @@ class AuthService {
     return getUserProfile(user.uid);
   }
 
+  // Auto-create profile jika user sudah login tetapi dokumen Firestore belum ada
+  Future<void> ensureUserProfileExists(User user) async {
+    final docRef = _firestore.collection('users').doc(user.uid);
+    final doc = await docRef.get();
+    if (!doc.exists) {
+      final name = user.displayName ?? user.email?.split('@').first ?? 'Pengguna';
+      final profile = UserProfile(
+        uid: user.uid,
+        displayName: name,
+        email: user.email ?? '',
+      );
+      await docRef.set(profile.toMap());
+    }
+  }
+
   // Get User Profile
   Future<UserProfile?> getUserProfile(String uid) async {
     final doc = await _firestore.collection('users').doc(uid).get();

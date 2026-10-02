@@ -89,18 +89,20 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.sand,
-        labelStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.7)),
-        hintStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.4)),
+        labelStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
+        hintStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.5)),
+        prefixStyle: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+        suffixIconColor: AppColors.sageDark,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: AppColors.sageDark.withValues(alpha: 0.15),
+            color: AppColors.sageDark.withValues(alpha: 0.2),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(
-            color: AppColors.sageDark.withValues(alpha: 0.15),
+            color: AppColors.sageDark.withValues(alpha: 0.2),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -112,14 +114,61 @@ class AppTheme {
         ),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
-        style: SegmentedButton.styleFrom(
-          selectedBackgroundColor: AppColors.sageDark,
-          selectedForegroundColor: AppColors.cream,
-          backgroundColor: AppColors.sand,
-          foregroundColor: AppColors.ink,
-          side: BorderSide(
-            color: AppColors.sageDark.withValues(alpha: 0.2),
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppColors.sageDark;
+            }
+            return AppColors.sand;
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppColors.cream;
+            }
+            return AppColors.ink;
+          }),
+          textStyle: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.cream);
+            }
+            return const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.ink);
+          }),
+          side: WidgetStateProperty.all(
+            BorderSide(
+              color: AppColors.sageDark.withValues(alpha: 0.2),
+            ),
           ),
+        ),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: AppColors.cream,
+        headerBackgroundColor: AppColors.sageDark,
+        headerForegroundColor: AppColors.cream,
+        surfaceTintColor: Colors.transparent,
+        weekdayStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+        yearStyle: const TextStyle(color: AppColors.ink),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.cream;
+          }
+          return AppColors.ink;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.sageDark;
+          }
+          return null;
+        }),
+        todayBorder: const BorderSide(color: AppColors.sageDark),
+        todayForegroundColor: WidgetStateProperty.all(AppColors.sageDark),
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: AppColors.sageDark,
+          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        confirmButtonStyle: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.sageDark,
+          foregroundColor: AppColors.cream,
+          textStyle: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       dialogTheme: DialogThemeData(

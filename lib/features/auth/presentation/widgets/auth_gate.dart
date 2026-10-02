@@ -42,7 +42,12 @@ class AuthGate extends ConsumerWidget {
 
             final profile = profileSnapshot.data;
             if (profile == null) {
-              return const LoginScreen();
+              // Jika user terautentikasi tapi dokumen profile di Firestore belum ada,
+              // buatkan profil secara otomatis di background agar tidak terjebak di Login.
+              authService.ensureUserProfileExists(user);
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
             }
 
             if (profile.householdId == null || profile.householdId!.isEmpty) {

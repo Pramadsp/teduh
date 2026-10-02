@@ -99,6 +99,15 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SegmentedButton<bool>(
+              style: SegmentedButton.styleFrom(
+                selectedBackgroundColor: AppColors.sageDark,
+                selectedForegroundColor: AppColors.cream,
+                backgroundColor: AppColors.sand,
+                foregroundColor: AppColors.ink,
+                side: BorderSide(
+                  color: AppColors.sageDark.withValues(alpha: 0.2),
+                ),
+              ),
               segments: const [
                 ButtonSegment(value: true, label: Text('Buat Grup Baru')),
                 ButtonSegment(value: false, label: Text('Gabung Kode')),

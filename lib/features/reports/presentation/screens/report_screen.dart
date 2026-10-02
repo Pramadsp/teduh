@@ -1,10 +1,14 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/date_range_helper.dart';
 import '../../../../core/utils/financial_calculator.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../export/data/excel_exporter.dart';
+import '../../../export/data/pdf_exporter.dart';
 import '../../../transactions/domain/transaction_model.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
 import '../../../transactions/presentation/widgets/transaction_form_modal.dart';
@@ -88,16 +92,234 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
     }
   }
 
+  void _showExportOptions({
+    required BuildContext context,
+    required String periodTitle,
+    required List<Transaction> transactions,
+    required int totalIncome,
+    required int totalExpense,
+    required int balance,
+    required Map<String, int> categoryTotals,
+  }) {
+    if (transactions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada transaksi pada periode ini untuk diekspor'),
+          backgroundColor: AppColors.expense,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.cream,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.sageDark.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Ekspor Laporan Keuangan',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  periodTitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.ink.withValues(alpha: 0.6),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.expense.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.expense),
+                  ),
+                  title: const Text(
+                    'Ekspor PDF (.pdf)',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
+                  ),
+                  subtitle: const Text('Format cetak rapi dengan ringkasan & tabel'),
+                  onTap: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    Navigator.pop(ctx);
+                    final file = await PdfReportExporter.generatePdf(
+                      periodTitle: periodTitle,
+                      transactions: transactions,
+                      totalIncome: totalIncome,
+                      totalExpense: totalExpense,
+                      balance: balance,
+                      categoryTotals: categoryTotals,
+                    );
+                    _showExportSuccessModal(messenger, file.path, 'PDF');
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.income.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.table_chart_rounded, color: AppColors.income),
+                  ),
+                  title: const Text(
+                    'Ekspor Excel (.xlsx)',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
+                  ),
+                  subtitle: const Text('Sheet ringkasan & nominal angka untuk kalkulasi'),
+                  onTap: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    Navigator.pop(ctx);
+                    final file = await ExcelReportExporter.generateExcel(
+                      periodTitle: periodTitle,
+                      transactions: transactions,
+                      totalIncome: totalIncome,
+                      totalExpense: totalExpense,
+                      balance: balance,
+                      categoryTotals: categoryTotals,
+                    );
+                    _showExportSuccessModal(messenger, file.path, 'Excel');
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showExportSuccessModal(ScaffoldMessengerState messenger, String path, String formatName) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.cream,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle_rounded, color: AppColors.income, size: 52),
+                const SizedBox(height: 12),
+                Text(
+                  'Laporan $formatName Berhasil Dibuat!',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.ink),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.sageDark),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.open_in_new_rounded, color: AppColors.sageDark),
+                        label: const Text('Buka File', style: TextStyle(color: AppColors.sageDark)),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          OpenFilex.open(path);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.sageDark,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.share_rounded, color: AppColors.cream),
+                        label: const Text('Bagikan', style: TextStyle(color: AppColors.cream)),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Share.shareXFiles([XFile(path)], text: 'Laporan Keuangan Teduh');
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(transactionsProvider);
     final currentRange = _getCurrentRange();
+
+    final periodTitle = _getPeriodTitle(currentRange);
 
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: const Text('Laporan Keuangan'),
         centerTitle: true,
+        actions: [
+          transactionsAsync.maybeWhen(
+            data: (allTransactions) {
+              final periodTxs = allTransactions
+                  .where((tx) => currentRange.contains(tx.date))
+                  .toList();
+              final summary = FinancialSummary.calculate(periodTxs);
+
+              final categoryTotalsMap = {
+                for (var cs in summary.categorySummaries) cs.categoryName: cs.totalAmount
+              };
+
+              return IconButton(
+                icon: const Icon(Icons.output_rounded, color: AppColors.sageDark),
+                tooltip: 'Ekspor Laporan',
+                onPressed: () {
+                  _showExportOptions(
+                    context: context,
+                    periodTitle: periodTitle,
+                    transactions: periodTxs,
+                    totalIncome: summary.totalIncome,
+                    totalExpense: summary.totalExpense,
+                    balance: summary.balance,
+                    categoryTotals: categoryTotalsMap,
+                  );
+                },
+              );
+            },
+            orElse: () => const SizedBox.shrink(),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -463,14 +685,14 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                               child: Icon(icon, color: color, size: 20),
                             ),
                             title: Text(
-                              tx.categoryName,
+                              tx.title,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.ink,
                               ),
                             ),
                             subtitle: Text(
-                              '${DateUtilsId.formatDateShort(tx.date)} • ${tx.createdByName}',
+                              '${tx.categoryName} • ${DateUtilsId.formatDateShort(tx.date)} • ${tx.createdByName}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.ink.withValues(alpha: 0.6),

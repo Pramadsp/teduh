@@ -32,6 +32,7 @@ class TransactionFormModal extends ConsumerStatefulWidget {
 class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
   final _formKey = GlobalKey<FormState>();
   late TransactionType _selectedType;
+  late TextEditingController _titleController;
   late TextEditingController _amountController;
   late TextEditingController _noteController;
   Category? _selectedCategory;
@@ -42,6 +43,7 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
     super.initState();
     final tx = widget.transaction;
     _selectedType = tx?.type ?? TransactionType.expense;
+    _titleController = TextEditingController(text: tx?.title ?? '');
     _amountController = TextEditingController(
       text: tx != null ? CurrencyUtils.formatRupiah(tx.amount).replaceAll('Rp ', '') : '',
     );
@@ -51,6 +53,7 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
 
   @override
   void dispose() {
+    _titleController.dispose();
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -70,6 +73,7 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
 
     final newTx = Transaction(
       id: widget.transaction?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      title: _titleController.text.trim(),
       type: _selectedType,
       amount: amount,
       categoryId: _selectedCategory!.id,
@@ -132,16 +136,26 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
               ),
               const SizedBox(height: 20),
               SegmentedButton<TransactionType>(
+                style: SegmentedButton.styleFrom(
+                  selectedBackgroundColor: _selectedType == TransactionType.expense ? AppColors.expense : AppColors.income,
+                  selectedForegroundColor: AppColors.cream,
+                  backgroundColor: AppColors.sand,
+                  foregroundColor: AppColors.ink,
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  side: BorderSide(
+                    color: AppColors.sageDark.withValues(alpha: 0.2),
+                  ),
+                ),
                 segments: const [
                   ButtonSegment(
                     value: TransactionType.expense,
                     label: Text('Pengeluaran'),
-                    icon: Icon(Icons.arrow_downward_rounded, color: AppColors.expense),
+                    icon: Icon(Icons.arrow_downward_rounded),
                   ),
                   ButtonSegment(
                     value: TransactionType.income,
                     label: Text('Pemasukan'),
-                    icon: Icon(Icons.arrow_upward_rounded, color: AppColors.income),
+                    icon: Icon(Icons.arrow_upward_rounded),
                   ),
                 ],
                 selected: {_selectedType},
@@ -154,13 +168,55 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                controller: _titleController,
+                style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold, fontSize: 16),
+                decoration: InputDecoration(
+                  labelText: 'Nama Transaksi',
+                  hintText: 'Contoh: Beli Kue, Gaji Bulanan',
+                  labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                  filled: true,
+                  fillColor: AppColors.sand,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                  ),
+                ),
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? 'Nama transaksi wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
                 inputFormatters: [CurrencyInputFormatter()],
-                style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
-                decoration: const InputDecoration(
+                style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold, fontSize: 16),
+                decoration: InputDecoration(
                   labelText: 'Nominal',
+                  labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
                   prefixText: 'Rp ',
+                  prefixStyle: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                  filled: true,
+                  fillColor: AppColors.sand,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                  ),
                 ),
                 validator: (value) {
                   final amount = CurrencyInputFormatter.parseAmount(value ?? '');
@@ -191,12 +247,30 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
                   return DropdownButtonFormField<Category>(
                     initialValue: _selectedCategory,
                     dropdownColor: AppColors.sand,
-                    style: const TextStyle(color: AppColors.ink, fontSize: 15),
-                    decoration: const InputDecoration(labelText: 'Kategori'),
+                    icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.sageDark),
+                    style: const TextStyle(color: AppColors.ink, fontSize: 15, fontWeight: FontWeight.bold),
+                    decoration: InputDecoration(
+                      labelText: 'Kategori',
+                      labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                      filled: true,
+                      fillColor: AppColors.sand,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                      ),
+                    ),
                     items: filteredCategories.map((c) {
                       return DropdownMenuItem(
                         value: c,
-                        child: Text(c.name, style: const TextStyle(color: AppColors.ink)),
+                        child: Text(c.name, style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -269,9 +343,24 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _noteController,
-                style: const TextStyle(color: AppColors.ink),
-                decoration: const InputDecoration(
+                style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                decoration: InputDecoration(
                   labelText: 'Catatan (opsional)',
+                  labelStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.7), fontWeight: FontWeight.w500),
+                  filled: true,
+                  fillColor: AppColors.sand,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

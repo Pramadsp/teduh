@@ -217,9 +217,11 @@ class DashboardScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      '5 Transaksi Terakhir',
-                      style: TextStyle(
+                    Text(
+                      recentTxs.isEmpty
+                          ? 'Transaksi Terakhir'
+                          : '${recentTxs.length} Transaksi Terakhir',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: AppColors.ink,
@@ -283,14 +285,14 @@ class DashboardScreen extends ConsumerWidget {
                             child: Icon(icon, color: color, size: 20),
                           ),
                           title: Text(
-                            tx.categoryName,
+                            tx.title,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: AppColors.ink,
                             ),
                           ),
                           subtitle: Text(
-                            '${DateUtilsId.formatDateShort(tx.date)} • ${tx.createdByName}',
+                            '${tx.categoryName} • ${DateUtilsId.formatDateShort(tx.date)}',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.ink.withValues(alpha: 0.6),
