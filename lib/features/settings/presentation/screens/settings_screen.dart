@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teduh/core/theme/app_colors.dart';
-import 'package:teduh/features/auth/data/auth_service.dart';
 import 'package:teduh/features/categories/presentation/screens/category_list_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -10,50 +9,84 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: const Text('Pengaturan'),
+        centerTitle: true,
       ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         children: [
-          const SizedBox(height: 8),
-          ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: AppColors.sand,
-              child: Icon(Icons.category, color: AppColors.sageDark),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.sand,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.sageDark.withValues(alpha: 0.15),
+              ),
             ),
-            title: const Text(
-              'Kelola Kategori',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: const Text('Tambah, ubah, atau hapus kategori transaksi'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const CategoryListScreen(),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.sageDark.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
                 ),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: AppColors.sand,
-              child: Icon(Icons.logout, color: AppColors.expense),
+                child: const Icon(Icons.category_outlined, color: AppColors.sageDark, size: 22),
+              ),
+              title: const Text(
+                'Kelola Kategori',
+                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
+              ),
+              subtitle: Text(
+                'Tambah, ubah, atau hapus kategori transaksi',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.ink.withValues(alpha: 0.6),
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.sageDark),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const CategoryListScreen(),
+                  ),
+                );
+              },
             ),
-            title: const Text('Keluar Akun', style: TextStyle(color: AppColors.expense)),
-            onTap: () async {
-              await AuthService().logout();
-            },
           ),
-          const Divider(),
-          const ListTile(
-            leading: CircleAvatar(
-              backgroundColor: AppColors.sand,
-              child: Icon(Icons.info_outline, color: AppColors.sageDark),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.sand,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.sageDark.withValues(alpha: 0.15),
+              ),
             ),
-            title: Text('Versi Aplikasi'),
-            subtitle: Text('0.4.0 (Teduh Local Beta)'),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.sageDark.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.info_outline_rounded, color: AppColors.sageDark, size: 22),
+              ),
+              title: const Text(
+                'Versi Aplikasi',
+                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
+              ),
+              subtitle: Text(
+                '0.5.0 (Teduh Firebase Beta)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.ink.withValues(alpha: 0.6),
+                ),
+              ),
+            ),
           ),
         ],
       ),

@@ -11,6 +11,7 @@ class ShellScaffold extends StatelessWidget {
     if (location.startsWith('/transactions')) return 1;
     if (location.startsWith('/reports')) return 2;
     if (location.startsWith('/settings')) return 3;
+    if (location.startsWith('/profile')) return 4;
     return 0;
   }
 
@@ -27,6 +28,9 @@ class ShellScaffold extends StatelessWidget {
         break;
       case 3:
         context.go('/settings');
+        break;
+      case 4:
+        context.go('/profile');
         break;
     }
   }
@@ -60,6 +64,11 @@ class ShellScaffold extends StatelessWidget {
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings),
             label: 'Pengaturan',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profil',
           ),
         ],
       ),

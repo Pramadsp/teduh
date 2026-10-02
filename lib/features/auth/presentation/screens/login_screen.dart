@@ -20,6 +20,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool _isRegistering = false;
   bool _isLoading = false;
+  bool _obscurePassword = true;
   String? _errorMessage;
 
   @override
@@ -87,91 +88,173 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.cream,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.park, size: 72, color: AppColors.sageDark),
-                  const SizedBox(height: 12),
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.sageDark,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.sage,
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(Icons.park_rounded, size: 40, color: AppColors.cream),
+                  ),
+                  const SizedBox(height: 14),
                   Text(
                     'Teduh',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.sageDark,
+                          color: AppColors.ink,
                         ),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     'Urusan uang jadi lebih tenang.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[700],
-                        ),
+                    style: TextStyle(
+                      color: AppColors.sageDark,
+                      fontSize: 14,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
-                  if (_errorMessage != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.expense.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.sand,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: AppColors.sageDark.withValues(alpha: 0.15),
+                        width: 1.5,
                       ),
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: AppColors.expense, fontSize: 13),
-                        textAlign: TextAlign.center,
-                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.ink.withValues(alpha: 0.05),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                  ],
-                  if (_isRegistering) ...[
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Nama Lengkap (Suami / Istri)'),
-                      validator: (val) => val == null || val.trim().isEmpty ? 'Nama wajib diisi' : null,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.expense.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppColors.expense.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: AppColors.expense, fontSize: 13),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        if (_isRegistering) ...[
+                          TextFormField(
+                            controller: _nameController,
+                            style: const TextStyle(color: AppColors.ink),
+                            decoration: const InputDecoration(
+                              labelText: 'Nama Lengkap (Suami / Istri)',
+                              fillColor: AppColors.cream,
+                            ),
+                            validator: (val) =>
+                                val == null || val.trim().isEmpty ? 'Nama wajib diisi' : null,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          style: const TextStyle(color: AppColors.ink),
+                          decoration: const InputDecoration(
+                            labelText: 'Alamat Email',
+                            fillColor: AppColors.cream,
+                          ),
+                          validator: (val) =>
+                              val == null || !val.contains('@') ? 'Email tidak valid' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          style: const TextStyle(color: AppColors.ink),
+                          decoration: InputDecoration(
+                            labelText: 'Kata Sandi',
+                            fillColor: AppColors.cream,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                color: AppColors.sageDark,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
+                          validator: (val) =>
+                              val == null || val.length < 6 ? 'Kata sandi minimal 6 karakter' : null,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.sageDark,
+                            foregroundColor: AppColors.cream,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(color: AppColors.cream, strokeWidth: 2.5),
+                                )
+                              : Text(
+                                  _isRegistering ? 'Daftar Sekarang' : 'Masuk',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _isRegistering = !_isRegistering;
+                              _errorMessage = null;
+                            });
+                          },
+                          child: Text(
+                            _isRegistering
+                                ? 'Sudah punya akun? Masuk di sini'
+                                : 'Belum punya akun? Daftar di sini',
+                            style: const TextStyle(
+                              color: AppColors.terracotta,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                  ],
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(labelText: 'Alamat Email'),
-                    validator: (val) => val == null || !val.contains('@') ? 'Email tidak valid' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Kata Sandi'),
-                    validator: (val) => val == null || val.length < 6 ? 'Kata sandi minimal 6 karakter' : null,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(_isRegistering ? 'Daftar Sekarang' : 'Masuk'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _isRegistering = !_isRegistering;
-                        _errorMessage = null;
-                      });
-                    },
-                    child: Text(_isRegistering
-                        ? 'Sudah punya akun? Masuk di sini'
-                        : 'Belum punya akun? Daftar di sini'),
                   ),
                 ],
               ),

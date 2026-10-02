@@ -13,15 +13,37 @@ class TransactionListScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Transaksi'),
-        content: Text('Apakah Anda yakin ingin menghapus transaksi "${tx.categoryName}"?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        backgroundColor: AppColors.cream,
+        title: const Text(
+          'Hapus Transaksi',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.ink,
+          ),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus transaksi "${tx.categoryName}"?',
+          style: const TextStyle(color: AppColors.ink),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Batal'),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: AppColors.sageDark),
+            ),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.expense),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.expense,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               final notifier = ref.read(transactionsProvider.notifier);
@@ -31,9 +53,14 @@ class TransactionListScreen extends ConsumerWidget {
                 ScaffoldMessenger.of(context).clearSnackBars();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Transaksi berhasil dihapus'),
+                    backgroundColor: AppColors.sageDark,
+                    content: const Text(
+                      'Transaksi berhasil dihapus',
+                      style: TextStyle(color: AppColors.cream),
+                    ),
                     action: SnackBarAction(
                       label: 'Undo',
+                      textColor: AppColors.terracotta,
                       onPressed: () {
                         notifier.addTransaction(tx);
                       },
@@ -42,7 +69,7 @@ class TransactionListScreen extends ConsumerWidget {
                 );
               }
             },
-            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -54,8 +81,10 @@ class TransactionListScreen extends ConsumerWidget {
     final transactionsAsync = ref.watch(transactionsProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: const Text('Daftar Transaksi'),
+        centerTitle: true,
       ),
       body: transactionsAsync.when(
         data: (transactions) {
@@ -64,6 +93,7 @@ class TransactionListScreen extends ConsumerWidget {
               child: Text(
                 'Belum ada transaksi.\nTekan tombol + untuk menambah.',
                 textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.ink),
               ),
             );
           }
@@ -78,7 +108,7 @@ class TransactionListScreen extends ConsumerWidget {
 
           return ListView.builder(
             itemCount: dateKeys.length,
-            padding: const EdgeInsets.only(bottom: 80),
+            padding: const EdgeInsets.only(bottom: 88, left: 16, right: 16, top: 12),
             itemBuilder: (context, index) {
               final dateHeader = dateKeys[index];
               final txList = grouped[dateHeader]!;
@@ -87,34 +117,52 @@ class TransactionListScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     child: Text(
                       dateHeader,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.sageDark,
-                          ),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: AppColors.sageDark,
+                      ),
                     ),
                   ),
                   ...txList.map((tx) {
                     final isIncome = tx.type == TransactionType.income;
                     final color = isIncome ? AppColors.income : AppColors.expense;
                     final prefix = isIncome ? '+ ' : '- ';
-                    final icon = isIncome ? Icons.arrow_upward : Icons.arrow_downward;
+                    final icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.sand,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.sageDark.withValues(alpha: 0.15),
+                          width: 1,
+                        ),
+                      ),
                       child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         leading: CircleAvatar(
-                          backgroundColor: color.withValues(alpha: 0.15),
-                          child: Icon(icon, color: color),
+                          backgroundColor: color.withValues(alpha: 0.12),
+                          child: Icon(icon, color: color, size: 20),
                         ),
                         title: Text(
                           tx.categoryName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.ink,
+                          ),
                         ),
                         subtitle: Text(
                           '${tx.createdByName}${tx.note != null ? ' • ${tx.note}' : ''}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.ink.withValues(alpha: 0.6),
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -140,15 +188,15 @@ class TransactionListScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, st) => Center(child: Text('Gagal memuat transaksi: $err')),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.sageDark)),
+        error: (err, st) => Center(child: Text('Gagal memuat transaksi: $err', style: const TextStyle(color: AppColors.ink))),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.terracotta,
         onPressed: () {
           TransactionFormModal.show(context);
         },
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: AppColors.cream),
       ),
     );
   }

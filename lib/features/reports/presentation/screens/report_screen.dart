@@ -94,15 +94,46 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
     final currentRange = _getCurrentRange();
 
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: const Text('Laporan Keuangan'),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Column(
           children: [
             // Segmented Control Filter Period
             SegmentedButton<ReportPeriodType>(
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppColors.sageDark;
+                  }
+                  return AppColors.sand;
+                }),
+                foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppColors.cream;
+                  }
+                  return AppColors.ink;
+                }),
+                textStyle: WidgetStateProperty.resolveWith<TextStyle>((states) {
+                  return TextStyle(
+                    fontWeight: states.contains(WidgetState.selected)
+                        ? FontWeight.bold
+                        : FontWeight.w600,
+                    color: states.contains(WidgetState.selected)
+                        ? AppColors.cream
+                        : AppColors.ink,
+                  );
+                }),
+                side: WidgetStateProperty.all(
+                  BorderSide(
+                    color: AppColors.sageDark.withValues(alpha: 0.2),
+                  ),
+                ),
+              ),
               segments: const [
                 ButtonSegment(
                   value: ReportPeriodType.daily,
@@ -126,34 +157,43 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
             ),
             const SizedBox(height: 16),
             // Navigasi Periode (Panah Kiri / Judul / Panah Kanan)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left),
-                      onPressed: _previousPeriod,
-                    ),
-                    Expanded(
-                      child: Text(
-                        _getPeriodTitle(currentRange),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      onPressed: _nextPeriod,
-                    ),
-                  ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.sand,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.sageDark.withValues(alpha: 0.15),
                 ),
               ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded, color: AppColors.sageDark),
+                    onPressed: _previousPeriod,
+                  ),
+                  Expanded(
+                    child: Text(
+                      _getPeriodTitle(currentRange),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppColors.ink,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right_rounded, color: AppColors.sageDark),
+                    onPressed: _nextPeriod,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             transactionsAsync.when(
               data: (allTransactions) {
                 final periodTxs = allTransactions
@@ -163,13 +203,20 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                 final summary = FinancialSummary.calculate(periodTxs);
 
                 if (periodTxs.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(
-                      child: Text(
-                        'Tidak ada transaksi pada periode ini.',
-                        style: TextStyle(color: Colors.grey),
+                  return Container(
+                    margin: const EdgeInsets.only(top: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.sand,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.sageDark.withValues(alpha: 0.15),
                       ),
+                    ),
+                    child: const Text(
+                      'Tidak ada transaksi pada periode ini.',
+                      style: TextStyle(color: AppColors.ink),
                     ),
                   );
                 }
@@ -181,81 +228,102 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: Card(
-                            color: AppColors.income.withValues(alpha: 0.15),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Pemasukan', style: TextStyle(fontSize: 12)),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    CurrencyUtils.formatRupiah(summary.totalIncome),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.income,
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.income.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: AppColors.income.withValues(alpha: 0.25),
                               ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Pemasukan',
+                                  style: TextStyle(fontSize: 11, color: AppColors.ink, fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  CurrencyUtils.formatRupiah(summary.totalIncome),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.income,
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Card(
-                            color: AppColors.expense.withValues(alpha: 0.15),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Pengeluaran', style: TextStyle(fontSize: 12)),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    CurrencyUtils.formatRupiah(summary.totalExpense),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.expense,
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.expense.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: AppColors.expense.withValues(alpha: 0.25),
                               ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Pengeluaran',
+                                  style: TextStyle(fontSize: 11, color: AppColors.ink, fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  CurrencyUtils.formatRupiah(summary.totalExpense),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.expense,
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Card(
-                            color: AppColors.sageDark.withValues(alpha: 0.15),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Saldo', style: TextStyle(fontSize: 12)),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    CurrencyUtils.formatRupiah(summary.balance),
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: summary.balance >= 0
-                                          ? AppColors.sageDark
-                                          : AppColors.expense,
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.sand,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: AppColors.sageDark.withValues(alpha: 0.15),
                               ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Saldo',
+                                  style: TextStyle(fontSize: 11, color: AppColors.ink, fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  CurrencyUtils.formatRupiah(summary.balance),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: summary.balance >= 0
+                                        ? AppColors.sageDark
+                                        : AppColors.expense,
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -264,83 +332,109 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                     const SizedBox(height: 24),
                     // Grafik Donut Pengeluaran per Kategori
                     if (summary.totalExpense > 0) ...[
-                      Text(
+                      const Text(
                         'Pengeluaran per Kategori',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 200,
-                        child: PieChart(
-                          PieChartData(
-                            sectionsSpace: 2,
-                            centerSpaceRadius: 40,
-                            sections: List.generate(
-                              summary.categorySummaries.length,
-                              (i) {
-                                final cat = summary.categorySummaries[i];
-                                final color = _chartColors[i % _chartColors.length];
-                                return PieChartSectionData(
-                                  color: color,
-                                  value: cat.totalAmount.toDouble(),
-                                  title: '${cat.percentage.toStringAsFixed(0)}%',
-                                  radius: 50,
-                                  titleStyle: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.ink,
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // Rincian Daftar Kategori
-                      ...List.generate(summary.categorySummaries.length, (i) {
-                        final cat = summary.categorySummaries[i];
-                        final color = _chartColors[i % _chartColors.length];
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 14,
-                                height: 14,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  cat.categoryName,
-                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                              ),
-                              Text(
-                                '${cat.percentage.toStringAsFixed(1)}% (${CurrencyUtils.formatRupiah(cat.totalAmount)})',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.sand,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.sageDark.withValues(alpha: 0.15),
                           ),
-                        );
-                      }),
+                        ),
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              height: 180,
+                              child: PieChart(
+                                PieChartData(
+                                  sectionsSpace: 2,
+                                  centerSpaceRadius: 36,
+                                  sections: List.generate(
+                                    summary.categorySummaries.length,
+                                    (i) {
+                                      final cat = summary.categorySummaries[i];
+                                      final color = _chartColors[i % _chartColors.length];
+                                      return PieChartSectionData(
+                                        color: color,
+                                        value: cat.totalAmount.toDouble(),
+                                        title: '${cat.percentage.toStringAsFixed(0)}%',
+                                        radius: 46,
+                                        titleStyle: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Rincian Daftar Kategori
+                            ...List.generate(summary.categorySummaries.length, (i) {
+                              final cat = summary.categorySummaries[i];
+                              final color = _chartColors[i % _chartColors.length];
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        cat.categoryName,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.ink,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${cat.percentage.toStringAsFixed(1)}% (${CurrencyUtils.formatRupiah(cat.totalAmount)})',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.ink,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 24),
                     ],
                     // Daftar Transaksi Periode Ini
-                    Text(
+                    const Text(
                       'Daftar Transaksi Periode Ini',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink,
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -350,21 +444,37 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                         final isIncome = tx.type == TransactionType.income;
                         final color = isIncome ? AppColors.income : AppColors.expense;
                         final prefix = isIncome ? '+ ' : '- ';
-                        final icon = isIncome ? Icons.arrow_upward : Icons.arrow_downward;
+                        final icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.sand,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.sageDark.withValues(alpha: 0.15),
+                              width: 1,
+                            ),
+                          ),
                           child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                             leading: CircleAvatar(
-                              backgroundColor: color.withValues(alpha: 0.15),
-                              child: Icon(icon, color: color),
+                              backgroundColor: color.withValues(alpha: 0.12),
+                              child: Icon(icon, color: color, size: 20),
                             ),
                             title: Text(
                               tx.categoryName,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.ink,
+                              ),
                             ),
                             subtitle: Text(
                               '${DateUtilsId.formatDateShort(tx.date)} • ${tx.createdByName}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.ink.withValues(alpha: 0.6),
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -386,8 +496,8 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                   ],
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, st) => Center(child: Text('Gagal memuat laporan: $err')),
+              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.sageDark)),
+              error: (err, st) => Center(child: Text('Gagal memuat laporan: $err', style: const TextStyle(color: AppColors.ink))),
             ),
           ],
         ),

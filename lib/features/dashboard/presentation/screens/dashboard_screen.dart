@@ -18,7 +18,11 @@ class DashboardScreen extends ConsumerWidget {
     final now = DateTime.now();
 
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -26,13 +30,13 @@ class DashboardScreen extends ConsumerWidget {
               'Teduh',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: AppColors.sageDark,
+                    color: AppColors.ink,
                   ),
             ),
             Text(
               'Urusan uang jadi lebih tenang',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Colors.grey[600],
+                    color: AppColors.sageDark,
                   ),
             ),
           ],
@@ -49,152 +53,205 @@ class DashboardScreen extends ConsumerWidget {
           final recentTxs = allTransactions.take(5).toList();
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Card(
-                  color: AppColors.sageDark,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                // Container Saldo Utama
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.sageDark,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.sageDark.withValues(alpha: 0.25),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(22),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Saldo Bulan Ini (${DateUtilsId.formatMonthYear(now)})',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          CurrencyUtils.formatRupiah(summary.balance),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
                         Row(
                           children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  const CircleAvatar(
-                                    radius: 16,
-                                    backgroundColor: Colors.white24,
-                                    child: Icon(Icons.arrow_upward,
-                                        color: Colors.white, size: 18),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'Pemasukan',
-                                          style: TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 12),
-                                        ),
-                                        Text(
-                                          CurrencyUtils.formatRupiah(
-                                              summary.totalIncome),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            const Icon(
+                              Icons.account_balance_wallet_outlined,
+                              color: AppColors.cream,
+                              size: 18,
                             ),
-                            Container(
-                              height: 30,
-                              width: 1,
-                              color: Colors.white24,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  const CircleAvatar(
-                                    radius: 16,
-                                    backgroundColor: Colors.white24,
-                                    child: Icon(Icons.arrow_downward,
-                                        color: Colors.white, size: 18),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'Pengeluaran',
-                                          style: TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 12),
-                                        ),
-                                        Text(
-                                          CurrencyUtils.formatRupiah(
-                                              summary.totalExpense),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                            const SizedBox(width: 8),
+                            Text(
+                              'Saldo Bulan Ini (${DateUtilsId.formatMonthYear(now)})',
+                              style: TextStyle(
+                                color: AppColors.cream.withValues(alpha: 0.85),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          CurrencyUtils.formatRupiah(summary.balance),
+                          style: const TextStyle(
+                            color: AppColors.cream,
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.income.withValues(alpha: 0.25),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_upward_rounded,
+                                        color: AppColors.cream,
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Pemasukan',
+                                            style: TextStyle(
+                                              color: AppColors.cream.withValues(alpha: 0.8),
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            CurrencyUtils.formatRupiah(summary.totalIncome),
+                                            style: const TextStyle(
+                                              color: AppColors.cream,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                height: 28,
+                                width: 1,
+                                color: AppColors.cream.withValues(alpha: 0.2),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.expense.withValues(alpha: 0.25),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_downward_rounded,
+                                        color: AppColors.cream,
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Pengeluaran',
+                                            style: TextStyle(
+                                              color: AppColors.cream.withValues(alpha: 0.8),
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            CurrencyUtils.formatRupiah(summary.totalExpense),
+                                            style: const TextStyle(
+                                              color: AppColors.cream,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const Text(
                       '5 Transaksi Terakhir',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink,
+                      ),
                     ),
                     TextButton(
                       onPressed: () => context.go('/transactions'),
-                      child: const Text('Lihat Semua'),
+                      child: const Text(
+                        'Lihat Semua',
+                        style: TextStyle(
+                          color: AppColors.sageDark,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 if (recentTxs.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32),
-                    child: Center(
-                      child: Text(
-                        'Belum ada transaksi tercatat.',
-                        style: TextStyle(color: Colors.grey),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.sand,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.sageDark.withValues(alpha: 0.15),
                       ),
+                    ),
+                    child: const Text(
+                      'Belum ada transaksi tercatat.',
+                      style: TextStyle(color: AppColors.ink),
                     ),
                   )
                 else
@@ -207,21 +264,37 @@ class DashboardScreen extends ConsumerWidget {
                       final isIncome = tx.type == TransactionType.income;
                       final color = isIncome ? AppColors.income : AppColors.expense;
                       final prefix = isIncome ? '+ ' : '- ';
-                      final icon = isIncome ? Icons.arrow_upward : Icons.arrow_downward;
+                      final icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.sand,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.sageDark.withValues(alpha: 0.15),
+                            width: 1,
+                          ),
+                        ),
                         child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                           leading: CircleAvatar(
-                            backgroundColor: color.withValues(alpha: 0.15),
-                            child: Icon(icon, color: color),
+                            backgroundColor: color.withValues(alpha: 0.12),
+                            child: Icon(icon, color: color, size: 20),
                           ),
                           title: Text(
                             tx.categoryName,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.ink,
+                            ),
                           ),
                           subtitle: Text(
                             '${DateUtilsId.formatDateShort(tx.date)} • ${tx.createdByName}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.ink.withValues(alpha: 0.6),
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -244,8 +317,15 @@ class DashboardScreen extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, st) => Center(child: Text('Gagal memuat dashboard: $err')),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.sageDark),
+        ),
+        error: (err, st) => Center(
+          child: Text(
+            'Gagal memuat dashboard: $err',
+            style: const TextStyle(color: AppColors.ink),
+          ),
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency_input_formatter.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../categories/domain/category_model.dart';
@@ -16,6 +17,7 @@ class TransactionFormModal extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      backgroundColor: AppColors.cream,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -108,23 +110,38 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.sageDark.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               Text(
                 widget.transaction == null ? 'Tambah Transaksi' : 'Ubah Transaksi',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.ink,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               SegmentedButton<TransactionType>(
                 segments: const [
                   ButtonSegment(
                     value: TransactionType.expense,
                     label: Text('Pengeluaran'),
-                    icon: Icon(Icons.arrow_downward, color: Colors.red),
+                    icon: Icon(Icons.arrow_downward_rounded, color: AppColors.expense),
                   ),
                   ButtonSegment(
                     value: TransactionType.income,
                     label: Text('Pemasukan'),
-                    icon: Icon(Icons.arrow_upward, color: Colors.green),
+                    icon: Icon(Icons.arrow_upward_rounded, color: AppColors.income),
                   ),
                 ],
                 selected: {_selectedType},
@@ -140,6 +157,7 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
                 controller: _amountController,
                 keyboardType: TextInputType.number,
                 inputFormatters: [CurrencyInputFormatter()],
+                style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
                 decoration: const InputDecoration(
                   labelText: 'Nominal',
                   prefixText: 'Rp ',
@@ -172,11 +190,13 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
 
                   return DropdownButtonFormField<Category>(
                     initialValue: _selectedCategory,
+                    dropdownColor: AppColors.sand,
+                    style: const TextStyle(color: AppColors.ink, fontSize: 15),
                     decoration: const InputDecoration(labelText: 'Kategori'),
                     items: filteredCategories.map((c) {
                       return DropdownMenuItem(
                         value: c,
-                        child: Text(c.name),
+                        child: Text(c.name, style: const TextStyle(color: AppColors.ink)),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -187,32 +207,69 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
                     validator: (val) => val == null ? 'Pilih kategori' : null,
                   );
                 },
-                loading: () => const CircularProgressIndicator(),
-                error: (err, st) => Text('Gagal memuat kategori: $err'),
+                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.sageDark)),
+                error: (err, st) => Text('Gagal memuat kategori: $err', style: const TextStyle(color: AppColors.ink)),
               ),
               const SizedBox(height: 16),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Tanggal Transaksi'),
-                subtitle: Text(DateUtilsId.formatDateFull(_selectedDate)),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _selectedDate,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2100),
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _selectedDate = picked;
-                    });
-                  }
-                },
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.sand,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.sageDark.withValues(alpha: 0.15),
+                  ),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  title: const Text(
+                    'Tanggal Transaksi',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.sageDark,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    DateUtilsId.formatDateFull(_selectedDate),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.calendar_today_rounded, color: AppColors.sageDark, size: 20),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2100),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: Theme.of(context).colorScheme.copyWith(
+                                  primary: AppColors.sageDark,
+                                  onPrimary: AppColors.cream,
+                                  surface: AppColors.cream,
+                                  onSurface: AppColors.ink,
+                                ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDate = picked;
+                      });
+                    }
+                  },
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _noteController,
+                style: const TextStyle(color: AppColors.ink),
                 decoration: const InputDecoration(
                   labelText: 'Catatan (opsional)',
                 ),
@@ -221,11 +278,14 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
               ElevatedButton(
                 onPressed: _submitForm,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(widget.transaction == null ? 'Simpan' : 'Perbarui'),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Text(
+                    widget.transaction == null ? 'Simpan' : 'Perbarui',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
             ],
           ),
         ),

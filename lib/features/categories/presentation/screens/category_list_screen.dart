@@ -37,7 +37,14 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) {
           return AlertDialog(
-            title: Text(category == null ? 'Tambah Kategori' : 'Ubah Kategori'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            backgroundColor: AppColors.cream,
+            title: Text(
+              category == null ? 'Tambah Kategori' : 'Ubah Kategori',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
+            ),
             content: Form(
               key: formKey,
               child: Column(
@@ -64,6 +71,7 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: nameController,
+                    style: const TextStyle(color: AppColors.ink),
                     decoration: const InputDecoration(labelText: 'Nama Kategori'),
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
@@ -78,7 +86,7 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Batal'),
+                child: const Text('Batal', style: TextStyle(color: AppColors.sageDark)),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -108,7 +116,7 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
                   ref.read(categoriesProvider.notifier).loadCategories();
                   if (ctx.mounted) Navigator.of(ctx).pop();
                 },
-                child: const Text('Simpan'),
+                child: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           );
@@ -127,14 +135,22 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Kategori Tidak Dapat Dihapus'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          backgroundColor: AppColors.cream,
+          title: const Text(
+            'Kategori Tidak Dapat Dihapus',
+            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
+          ),
           content: Text(
             'Kategori "${category.name}" sudah digunakan dalam riwayat transaksi. Anda tidak dapat menghapusnya demi menjaga keutuhan laporan keuangan.',
+            style: const TextStyle(color: AppColors.ink),
           ),
           actions: [
             ElevatedButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Mengerti'),
+              child: const Text('Mengerti', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -145,15 +161,31 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Kategori'),
-        content: Text('Apakah Anda yakin ingin menghapus kategori "${category.name}"?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        backgroundColor: AppColors.cream,
+        title: const Text(
+          'Hapus Kategori',
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus kategori "${category.name}"?',
+          style: const TextStyle(color: AppColors.ink),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Batal'),
+            child: const Text('Batal', style: TextStyle(color: AppColors.sageDark)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.expense),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.expense,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             onPressed: () async {
               Navigator.of(ctx).pop();
               final repo = ref.read(categoryRepositoryProvider);
@@ -162,11 +194,14 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
 
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Kategori "${category.name}" berhasil dihapus')),
+                  SnackBar(
+                    backgroundColor: AppColors.sageDark,
+                    content: Text('Kategori "${category.name}" berhasil dihapus', style: const TextStyle(color: AppColors.cream)),
+                  ),
                 );
               }
             },
-            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -178,10 +213,16 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: const Text('Kelola Kategori'),
+        centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: AppColors.sageDark,
+          labelColor: AppColors.sageDark,
+          unselectedLabelColor: AppColors.ink.withValues(alpha: 0.6),
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
           tabs: const [
             Tab(text: 'Pengeluaran'),
             Tab(text: 'Pemasukan'),
@@ -203,8 +244,8 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, st) => Center(child: Text('Gagal memuat kategori: $err')),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.sageDark)),
+        error: (err, st) => Center(child: Text('Gagal memuat kategori: $err', style: const TextStyle(color: AppColors.ink))),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.terracotta,
@@ -214,50 +255,62 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
               : CategoryType.income;
           _showCategoryDialog(defaultType: currentType);
         },
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: AppColors.cream),
       ),
     );
   }
 
   Widget _buildCategoryListView(List<Category> list, CategoryType type) {
     if (list.isEmpty) {
-      return const Center(child: Text('Belum ada kategori.'));
+      return const Center(child: Text('Belum ada kategori.', style: TextStyle(color: AppColors.ink)));
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80, top: 8),
+      padding: const EdgeInsets.only(bottom: 88, top: 12, left: 16, right: 16),
       itemCount: list.length,
       itemBuilder: (context, index) {
         final cat = list[index];
 
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: AppColors.sand,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.sageDark.withValues(alpha: 0.15),
+              width: 1,
+            ),
+          ),
           child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             leading: CircleAvatar(
-              backgroundColor: AppColors.sage.withValues(alpha: 0.2),
+              backgroundColor: type == CategoryType.income
+                  ? AppColors.income.withValues(alpha: 0.12)
+                  : AppColors.expense.withValues(alpha: 0.12),
               child: Icon(
-                type == CategoryType.income ? Icons.arrow_upward : Icons.arrow_downward,
+                type == CategoryType.income ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
                 color: type == CategoryType.income ? AppColors.income : AppColors.expense,
+                size: 20,
               ),
             ),
             title: Text(
               cat.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
             ),
             subtitle: cat.isDefault
-                ? const Text('Bawaan sistem', style: TextStyle(fontSize: 12, color: Colors.grey))
+                ? Text('Bawaan sistem', style: TextStyle(fontSize: 12, color: AppColors.ink.withValues(alpha: 0.5)))
                 : null,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(Icons.edit_outlined, color: AppColors.sageDark, size: 20),
                   onPressed: () {
                     _showCategoryDialog(category: cat, defaultType: type);
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: AppColors.expense),
+                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.expense, size: 20),
                   onPressed: () {
                     _confirmDeleteCategory(cat);
                   },

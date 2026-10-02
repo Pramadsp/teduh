@@ -82,17 +82,19 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: const Text('Grup Keluarga'),
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_rounded, color: AppColors.expense),
             onPressed: () => _authService.logout(),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -110,80 +112,134 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
               },
             ),
             const SizedBox(height: 24),
-            if (_errorMessage != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.expense.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.sand,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: AppColors.sageDark.withValues(alpha: 0.15),
+                  width: 1.5,
                 ),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: AppColors.expense, fontSize: 13),
-                  textAlign: TextAlign.center,
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.ink.withValues(alpha: 0.05),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-            ],
-            if (_isCreating) ...[
-              Form(
-                key: _createFormKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _householdNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nama Keluarga / Rumah Tangga',
-                        hintText: 'Contoh: Keluarga Pratama',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.expense.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.expense.withValues(alpha: 0.3),
+                        ),
                       ),
-                      validator: (val) =>
-                          val == null || val.trim().isEmpty ? 'Nama grup wajib diisi' : null,
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: AppColors.expense, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _submitCreate,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Buat Grup Keluarga'),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_isCreating) ...[
+                    Form(
+                      key: _createFormKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _householdNameController,
+                            style: const TextStyle(color: AppColors.ink),
+                            decoration: const InputDecoration(
+                              labelText: 'Nama Keluarga / Rumah Tangga',
+                              hintText: 'Contoh: Keluarga Pratama',
+                              fillColor: AppColors.cream,
+                            ),
+                            validator: (val) =>
+                                val == null || val.trim().isEmpty ? 'Nama grup wajib diisi' : null,
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _submitCreate,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.sageDark,
+                              foregroundColor: AppColors.cream,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(color: AppColors.cream, strokeWidth: 2.5),
+                                  )
+                                : const Text(
+                                    'Buat Grup Keluarga',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    Form(
+                      key: _joinFormKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _inviteCodeController,
+                            textCapitalization: TextCapitalization.characters,
+                            style: const TextStyle(
+                              color: AppColors.terracotta,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(6),
+                            ],
+                            decoration: const InputDecoration(
+                              labelText: 'Kode Undangan (6 Karakter)',
+                              hintText: 'Contoh: A8K9X2',
+                              fillColor: AppColors.cream,
+                            ),
+                            validator: (val) =>
+                                val == null || val.trim().length < 6 ? 'Masukkan 6 karakter kode' : null,
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _submitJoin,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.sageDark,
+                              foregroundColor: AppColors.cream,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(color: AppColors.cream, strokeWidth: 2.5),
+                                  )
+                                : const Text(
+                                    'Gabung Grup',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
-            ] else ...[
-              Form(
-                key: _joinFormKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _inviteCodeController,
-                      textCapitalization: TextCapitalization.characters,
-                      inputFormatters: [
-                        LengthLimitingTextInputFormatter(6),
-                      ],
-                      decoration: const InputDecoration(
-                        labelText: 'Kode Undangan (6 Karakter)',
-                        hintText: 'Contoh: A8K9X2',
-                      ),
-                      validator: (val) =>
-                          val == null || val.trim().length < 6 ? 'Masukkan 6 karakter kode' : null,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _submitJoin,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Gabung Grup'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ],
         ),
       ),

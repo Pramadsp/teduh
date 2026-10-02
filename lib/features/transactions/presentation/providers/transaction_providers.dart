@@ -33,10 +33,13 @@ class CategoriesNotifier extends StateNotifier<AsyncValue<List<Category>>> {
 }
 
 final categoriesProvider =
-    StateNotifierProvider<CategoriesNotifier, AsyncValue<List<Category>>>((ref) {
-  final repo = ref.watch(categoryRepositoryProvider);
-  return CategoriesNotifier(repo);
-});
+    StateNotifierProvider<CategoriesNotifier, AsyncValue<List<Category>>>(
+  (ref) {
+    final repo = ref.watch(categoryRepositoryProvider);
+    return CategoriesNotifier(repo);
+  },
+  dependencies: [categoryRepositoryProvider],
+);
 
 // Transactions Notifier
 class TransactionsNotifier extends StateNotifier<AsyncValue<List<Transaction>>> {
@@ -75,7 +78,10 @@ class TransactionsNotifier extends StateNotifier<AsyncValue<List<Transaction>>> 
 }
 
 final transactionsProvider =
-    StateNotifierProvider<TransactionsNotifier, AsyncValue<List<Transaction>>>((ref) {
-  final repo = ref.watch(transactionRepositoryProvider);
-  return TransactionsNotifier(repo);
-});
+    StateNotifierProvider<TransactionsNotifier, AsyncValue<List<Transaction>>>(
+  (ref) {
+    final repo = ref.watch(transactionRepositoryProvider);
+    return TransactionsNotifier(repo);
+  },
+  dependencies: [transactionRepositoryProvider],
+);
