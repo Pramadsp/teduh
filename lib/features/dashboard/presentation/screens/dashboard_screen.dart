@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/date_range_helper.dart';
 import '../../../../core/utils/financial_calculator.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../auth/data/auth_service.dart';
+import '../../../auth/domain/user_profile.dart';
+import '../../../household/domain/household_model.dart';
+import '../../../household/presentation/widgets/transfer_modal.dart';
 import '../../../transactions/domain/transaction_model.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
 import '../../../transactions/presentation/widgets/transaction_form_modal.dart';
@@ -75,20 +80,29 @@ class DashboardScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Header Total Saldo Keluarga
                         Row(
                           children: [
-                            const Icon(
-                              Icons.account_balance_wallet_outlined,
-                              color: AppColors.cream,
-                              size: 18,
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.family_restroom_rounded,
+                                color: AppColors.cream,
+                                size: 18,
+                              ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 10),
                             Text(
-                              'Saldo Bulan Ini (${DateUtilsId.formatMonthYear(now)})',
+                              'TOTAL SALDO KELUARGA (${DateUtilsId.formatMonthYear(now)})',
                               style: TextStyle(
                                 color: AppColors.cream.withValues(alpha: 0.85),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
                               ),
                             ),
                           ],
@@ -98,12 +112,92 @@ class DashboardScreen extends ConsumerWidget {
                           CurrencyUtils.formatRupiah(summary.balance),
                           style: const TextStyle(
                             color: AppColors.cream,
-                            fontSize: 30,
+                            fontSize: 32,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.3,
                           ),
                         ),
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 18),
+
+                        // Sub-seksi Kartu Saldo Per-Anggota
+                        if (summary.userBalances.isNotEmpty) ...[
+                          const Text(
+                            'SALDO PER-ANGGOTA',
+                            style: TextStyle(
+                              color: AppColors.cream,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: summary.userBalances.values.map((u) {
+                              return Expanded(
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.sand,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: AppColors.sageDark.withValues(alpha: 0.15),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 10,
+                                            backgroundColor: AppColors.sageDark,
+                                            child: Text(
+                                              u.userName.isNotEmpty ? u.userName[0].toUpperCase() : '?',
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.cream,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              'Saldo ${u.userName}',
+                                              style: const TextStyle(
+                                                color: AppColors.ink,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        CurrencyUtils.formatRupiah(u.balance),
+                                        style: TextStyle(
+                                          color: u.balance >= 0 ? AppColors.income : AppColors.expense,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const DashboardTransferButton(),
+                          const SizedBox(height: 18),
+                        ],
+
+                        // Indikator Pemasukan & Pengeluaran Keluarga
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
@@ -133,7 +227,7 @@ class DashboardScreen extends ConsumerWidget {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Pemasukan',
+                                            'Pemasukan Keluarga',
                                             style: TextStyle(
                                               color: AppColors.cream.withValues(alpha: 0.8),
                                               fontSize: 11,
@@ -183,7 +277,7 @@ class DashboardScreen extends ConsumerWidget {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Pengeluaran',
+                                            'Pengeluaran Keluarga',
                                             style: TextStyle(
                                               color: AppColors.cream.withValues(alpha: 0.8),
                                               fontSize: 11,
@@ -356,6 +450,74 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class DashboardTransferButton extends StatelessWidget {
+  const DashboardTransferButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final authService = AuthService();
+    final currentUser = authService.currentUser;
+    if (currentUser == null) return const SizedBox.shrink();
+
+    return StreamBuilder<UserProfile?>(
+      stream: authService.streamUserProfile(currentUser.uid),
+      builder: (context, profileSnap) {
+        final profile = profileSnap.data;
+        if (profile?.householdId == null || profile!.householdId!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('households')
+              .doc(profile.householdId)
+              .snapshots(),
+          builder: (context, householdSnap) {
+            if (!householdSnap.hasData || !householdSnap.data!.exists) {
+              return const SizedBox.shrink();
+            }
+
+            final household = Household.fromMap(householdSnap.data!.data()!);
+            if (!household.canTransfer(currentUser.uid)) {
+              return const SizedBox.shrink();
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 2),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: AppColors.terracotta,
+                    foregroundColor: AppColors.cream,
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                  icon: const Icon(Icons.swap_horiz_rounded, size: 18, color: AppColors.cream),
+                  label: const Text(
+                    'Transfer Saldo Ke Pasangan',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.cream),
+                  ),
+                  onPressed: () {
+                    TransferModal.show(
+                      context,
+                      household: household,
+                      currentUid: currentUser.uid,
+                    );
+                  },
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

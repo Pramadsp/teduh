@@ -172,10 +172,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         if (_isRegistering) ...[
                           TextFormField(
                             controller: _nameController,
-                            style: const TextStyle(color: AppColors.ink),
-                            decoration: const InputDecoration(
-                              labelText: 'Nama Lengkap (Suami / Istri)',
-                              fillColor: AppColors.cream,
+                            style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                              labelText: 'Nama Lengkap',
+                              hintText: 'Masukkan nama lengkap Anda',
+                              labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                              prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.sageDark),
+                              filled: true,
+                              fillColor: AppColors.sand,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                              ),
                             ),
                             validator: (val) =>
                                 val == null || val.trim().isEmpty ? 'Nama wajib diisi' : null,
@@ -185,10 +201,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          style: const TextStyle(color: AppColors.ink),
-                          decoration: const InputDecoration(
+                          style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                          decoration: InputDecoration(
                             labelText: 'Alamat Email',
-                            fillColor: AppColors.cream,
+                            hintText: 'Masukkan alamat email Anda',
+                            labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                            prefixIcon: const Icon(Icons.email_outlined, color: AppColors.sageDark),
+                            filled: true,
+                            fillColor: AppColors.sand,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                            ),
                           ),
                           validator: (val) =>
                               val == null || !val.contains('@') ? 'Email tidak valid' : null,
@@ -197,10 +229,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
-                          style: const TextStyle(color: AppColors.ink),
+                          style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
                           decoration: InputDecoration(
                             labelText: 'Kata Sandi',
-                            fillColor: AppColors.cream,
+                            hintText: 'Masukkan kata sandi',
+                            labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                            prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.sageDark),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -211,6 +245,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   _obscurePassword = !_obscurePassword;
                                 });
                               },
+                            ),
+                            filled: true,
+                            fillColor: AppColors.sand,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
                             ),
                           ),
                           validator: (val) =>

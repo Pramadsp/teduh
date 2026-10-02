@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -93,6 +94,12 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
   @override
   Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(transactionsProvider);
+    String? currentUid;
+    try {
+      currentUid = FirebaseAuth.instance.currentUser?.uid;
+    } catch (_) {
+      currentUid = null;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -291,6 +298,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
                           final color = isIncome ? AppColors.income : AppColors.expense;
                           final prefix = isIncome ? '+ ' : '- ';
                           final icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+                          final isCreatedByMe = currentUid == null || tx.createdBy == currentUid;
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
@@ -308,12 +316,37 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
                                 backgroundColor: color.withValues(alpha: 0.12),
                                 child: Icon(icon, color: color, size: 20),
                               ),
-                              title: Text(
-                                tx.title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.ink,
-                                ),
+                              title: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      tx.title,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.ink,
+                                      ),
+                                    ),
+                                  ),
+                                  if (!isCreatedByMe)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.terracotta.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: AppColors.terracotta.withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Oleh ${tx.createdByName}',
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.terracotta,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               subtitle: Text(
                                 '${tx.categoryName} • ${tx.createdByName}${tx.note != null && tx.note!.isNotEmpty ? ' (${tx.note})' : ''}',
@@ -333,9 +366,55 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
                                 ),
                               ),
                               onTap: () {
+                                if (!isCreatedByMe) {
+                                  ScaffoldMessenger.of(context).clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: AppColors.sageDark,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      content: Row(
+                                        children: [
+                                          const Icon(Icons.info_outline_rounded, color: AppColors.cream, size: 18),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Transaksi ini dicatat oleh ${tx.createdByName} (Hanya Dapat Dilihat)',
+                                              style: const TextStyle(color: AppColors.cream),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
                                 TransactionFormModal.show(context, transaction: tx);
                               },
                               onLongPress: () {
+                                if (!isCreatedByMe) {
+                                  ScaffoldMessenger.of(context).clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: AppColors.sageDark,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      content: Row(
+                                        children: [
+                                          const Icon(Icons.lock_outline_rounded, color: AppColors.cream, size: 18),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Hanya ${tx.createdByName} yang dapat menghapus transaksi ini',
+                                              style: const TextStyle(color: AppColors.cream),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
                                 _confirmDelete(context, ref, tx);
                               },
                             ),

@@ -124,6 +124,7 @@ class AuthService {
       name: householdName,
       memberIds: [uid],
       inviteCode: inviteCode,
+      creatorUid: uid,
       createdAt: DateTime.now(),
     );
 
@@ -158,8 +159,8 @@ class AuthService {
     }
 
     final household = Household.fromMap(householdDoc.data()!);
-    if (household.memberIds.length >= 2) {
-      throw Exception('Grup keluarga ini sudah penuh (maksimal 2 anggota)');
+    if (household.memberIds.length >= 6) {
+      throw Exception('Grup ini sudah penuh (maksimal 6 anggota)');
     }
 
     final batch = _firestore.batch();
@@ -169,5 +170,23 @@ class AuthService {
     batch.update(_firestore.collection('users').doc(uid), {'householdId': householdId});
 
     await batch.commit();
+  }
+
+  // Toggle Izin Transfer Saldo untuk Anggota (Khusus Admin / Leader)
+  Future<void> toggleTransferPrivilege({
+    required String householdId,
+    required String targetUid,
+    required bool grant,
+  }) async {
+    final householdRef = _firestore.collection('households').doc(householdId);
+    if (grant) {
+      await householdRef.update({
+        'transferPrivileges': FieldValue.arrayUnion([targetUid]),
+      });
+    } else {
+      await householdRef.update({
+        'transferPrivileges': FieldValue.arrayRemove([targetUid]),
+      });
+    }
   }
 }

@@ -6,6 +6,7 @@ import 'package:teduh/core/theme/app_colors.dart';
 import 'package:teduh/features/auth/data/auth_service.dart';
 import 'package:teduh/features/auth/domain/user_profile.dart';
 import 'package:teduh/features/household/domain/household_model.dart';
+import 'package:teduh/features/household/presentation/widgets/transfer_modal.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -406,7 +407,7 @@ class ActiveHouseholdCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final memberCount = household.memberIds.length;
-    final isComplete = memberCount >= 2;
+    final isFull = memberCount >= 6;
 
     return Container(
       decoration: BoxDecoration(
@@ -501,35 +502,33 @@ class ActiveHouseholdCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isComplete
-                            ? AppColors.income.withValues(alpha: 0.12)
-                            : AppColors.terracotta.withValues(alpha: 0.12),
+                        color: isFull
+                            ? AppColors.terracotta.withValues(alpha: 0.12)
+                            : AppColors.income.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: isComplete
-                              ? AppColors.income.withValues(alpha: 0.4)
-                              : AppColors.terracotta.withValues(alpha: 0.4),
+                          color: isFull
+                              ? AppColors.terracotta.withValues(alpha: 0.4)
+                              : AppColors.income.withValues(alpha: 0.4),
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            isComplete
-                                ? Icons.check_circle_rounded
-                                : Icons.hourglass_top_rounded,
+                            isFull
+                                ? Icons.group_rounded
+                                : Icons.person_add_rounded,
                             size: 14,
-                            color: isComplete ? AppColors.income : AppColors.terracotta,
+                            color: isFull ? AppColors.terracotta : AppColors.income,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            isComplete
-                                ? '$memberCount/2 • Lengkap'
-                                : '$memberCount/2 • Menunggu Pasangan',
+                            '$memberCount/6 • ${isFull ? 'Penuh' : 'Aktif'}',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: isComplete ? AppColors.income : AppColors.terracotta,
+                              color: isFull ? AppColors.terracotta : AppColors.income,
                             ),
                           ),
                         ],
@@ -647,7 +646,7 @@ class ActiveHouseholdCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'ANGGOTA KELUARGA (${household.memberIds.length}/2)',
+                      'ANGGOTA KELUARGA (${household.memberIds.length}/6)',
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -665,11 +664,43 @@ class ActiveHouseholdCard extends StatelessWidget {
                     for (final memberUid in household.memberIds)
                       MemberProfileTile(
                         uid: memberUid,
-                        isCurrentProfile: memberUid == currentUid,
+                        household: household,
+                        currentUid: currentUid,
                       ),
-                    if (household.memberIds.length < 2) const WaitingPartnerTile(),
+                    if (household.memberIds.length < 6) const WaitingPartnerTile(),
                   ],
                 ),
+
+                // Tombol Transfer Saldo (Jika pengguna memiliki izin transfer / owner)
+                if (household.canTransfer(currentUid)) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.terracotta,
+                        foregroundColor: AppColors.cream,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      icon: const Icon(Icons.swap_horiz_rounded, color: AppColors.cream, size: 20),
+                      label: const Text(
+                        'Transfer Saldo ke Anggota',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      onPressed: () {
+                        TransferModal.show(
+                          context,
+                          household: household,
+                          currentUid: currentUid,
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -681,16 +712,23 @@ class ActiveHouseholdCard extends StatelessWidget {
 
 class MemberProfileTile extends StatelessWidget {
   final String uid;
-  final bool isCurrentProfile;
+  final Household household;
+  final String currentUid;
 
   const MemberProfileTile({
     super.key,
     required this.uid,
-    required this.isCurrentProfile,
+    required this.household,
+    required this.currentUid,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isCurrentProfile = uid == currentUid;
+    final isMemberOwner = household.isOwner(uid);
+    final hasTransferPermission = household.canTransfer(uid);
+    final isCurrentUserAdmin = household.isOwner(currentUid);
+
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
       builder: (context, snapshot) {
@@ -743,7 +781,7 @@ class MemberProfileTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: isCurrentProfile ? AppColors.sageDark : AppColors.terracotta,
+                backgroundColor: isMemberOwner ? AppColors.sageDark : AppColors.terracotta,
                 child: Text(
                   profile.displayName.isNotEmpty
                       ? profile.displayName[0].toUpperCase()
@@ -760,45 +798,114 @@ class MemberProfileTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      profile.displayName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.ink,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            profile.displayName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.ink,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isMemberOwner) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.sageDark,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'Leader',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.cream,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     Text(
                       profile.email,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: AppColors.ink.withValues(alpha: 0.6),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isCurrentProfile
-                      ? AppColors.sageDark
-                      : AppColors.terracotta.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: isCurrentProfile
-                      ? null
-                      : Border.all(color: AppColors.terracotta.withValues(alpha: 0.4)),
-                ),
-                child: Text(
-                  isCurrentProfile ? 'Saya' : 'Pasangan',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: isCurrentProfile ? AppColors.cream : AppColors.terracotta,
+
+              // Switch Toggle Izin Transfer (Tampil jika Admin/Leader mengelola anggota lain)
+              if (isCurrentUserAdmin && !isCurrentProfile && !isMemberOwner)
+                Column(
+                  children: [
+                    const Text(
+                      'Izin Transfer',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.sageDark,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 28,
+                      child: Switch.adaptive(
+                        value: hasTransferPermission,
+                        activeTrackColor: AppColors.sageDark,
+                        onChanged: (val) async {
+                          final authService = AuthService();
+                          await authService.toggleTransferPrivilege(
+                            householdId: household.id,
+                            targetUid: uid,
+                            grant: val,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isCurrentProfile
+                        ? AppColors.sageDark.withValues(alpha: 0.15)
+                        : (hasTransferPermission
+                            ? AppColors.income.withValues(alpha: 0.15)
+                            : AppColors.sand),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isCurrentProfile
+                          ? AppColors.sageDark.withValues(alpha: 0.3)
+                          : (hasTransferPermission
+                              ? AppColors.income.withValues(alpha: 0.4)
+                              : AppColors.sageDark.withValues(alpha: 0.15)),
+                    ),
+                  ),
+                  child: Text(
+                    isCurrentProfile
+                        ? 'Saya'
+                        : (hasTransferPermission ? 'Izin Transfer' : 'Anggota'),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isCurrentProfile
+                          ? AppColors.sageDark
+                          : (hasTransferPermission ? AppColors.income : AppColors.ink),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         );

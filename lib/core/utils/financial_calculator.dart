@@ -14,17 +14,35 @@ class CategorySummary {
   });
 }
 
+class UserBalanceSummary {
+  final String uid;
+  final String userName;
+  final int income;
+  final int expense;
+  final int balance;
+
+  const UserBalanceSummary({
+    required this.uid,
+    required this.userName,
+    required this.income,
+    required this.expense,
+    required this.balance,
+  });
+}
+
 class FinancialSummary {
   final int totalIncome;
   final int totalExpense;
   final int balance;
   final List<CategorySummary> categorySummaries;
+  final Map<String, UserBalanceSummary> userBalances;
 
   const FinancialSummary({
     required this.totalIncome,
     required this.totalExpense,
     required this.balance,
     required this.categorySummaries,
+    required this.userBalances,
   });
 
   static FinancialSummary calculate(List<Transaction> transactions) {
@@ -33,11 +51,21 @@ class FinancialSummary {
     final Map<String, int> expensePerCategory = {};
     final Map<String, String> categoryNames = {};
 
+    // Tracking Saldo Per User
+    final Map<String, int> userIncomes = {};
+    final Map<String, int> userExpenses = {};
+    final Map<String, String> userNames = {};
+
     for (final tx in transactions) {
+      final uid = tx.createdBy;
+      userNames[uid] = tx.createdByName;
+
       if (tx.type == TransactionType.income) {
         income += tx.amount;
+        userIncomes[uid] = (userIncomes[uid] ?? 0) + tx.amount;
       } else {
         expense += tx.amount;
+        userExpenses[uid] = (userExpenses[uid] ?? 0) + tx.amount;
         expensePerCategory[tx.categoryId] =
             (expensePerCategory[tx.categoryId] ?? 0) + tx.amount;
         categoryNames[tx.categoryId] = tx.categoryName;
@@ -59,11 +87,25 @@ class FinancialSummary {
       summaries.sort((a, b) => b.totalAmount.compareTo(a.totalAmount));
     }
 
+    final Map<String, UserBalanceSummary> uBalances = {};
+    userNames.forEach((uid, name) {
+      final uInc = userIncomes[uid] ?? 0;
+      final uExp = userExpenses[uid] ?? 0;
+      uBalances[uid] = UserBalanceSummary(
+        uid: uid,
+        userName: name,
+        income: uInc,
+        expense: uExp,
+        balance: uInc - uExp,
+      );
+    });
+
     return FinancialSummary(
       totalIncome: income,
       totalExpense: expense,
       balance: income - expense,
       categorySummaries: summaries,
+      userBalances: uBalances,
     );
   }
 }
