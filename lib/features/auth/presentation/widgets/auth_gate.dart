@@ -1,9 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:teduh/core/utils/user_activity_detector.dart';
 import 'package:teduh/features/auth/data/auth_service.dart';
 import 'package:teduh/features/auth/domain/user_profile.dart';
+import 'package:teduh/features/auth/presentation/providers/pin_lock_provider.dart';
 import 'package:teduh/features/auth/presentation/screens/login_screen.dart';
+import 'package:teduh/features/auth/presentation/screens/pin_screen.dart';
 import 'package:teduh/features/household/presentation/screens/household_setup_screen.dart';
 import 'package:teduh/features/transactions/data/firestore_repositories.dart';
 import 'package:teduh/features/transactions/presentation/providers/transaction_providers.dart';
@@ -54,6 +57,22 @@ class AuthGate extends ConsumerWidget {
               return HouseholdSetupScreen(uid: profile.uid);
             }
 
+            if (profile.pin == null || profile.pin!.isEmpty) {
+              return PinScreen(uid: profile.uid, mode: PinMode.setup);
+            }
+
+            // PIN Gate: Jika belum di-unlock (saat login baru atau aplikasi dibuka kembali), tampilkan verifikasi PIN
+            final isPinUnlocked = ref.watch(pinLockProvider);
+            if (!isPinUnlocked) {
+              return PinScreen(
+                uid: profile.uid,
+                mode: PinMode.verify,
+                onVerified: () {
+                  ref.read(pinLockProvider.notifier).unlock();
+                },
+              );
+            }
+
             // Integrasi Firestore Repositories Real-Time per Household
             final householdId = profile.householdId!;
 
@@ -66,7 +85,9 @@ class AuthGate extends ConsumerWidget {
                   FirestoreTransactionRepository(householdId: householdId),
                 ),
               ],
-              child: child,
+              child: UserActivityDetector(
+                child: child,
+              ),
             );
           },
         );

@@ -3,12 +3,14 @@ class UserProfile {
   final String displayName;
   final String email;
   final String? householdId;
+  final String? pin;
 
   const UserProfile({
     required this.uid,
     required this.displayName,
     required this.email,
     this.householdId,
+    this.pin,
   });
 
   Map<String, dynamic> toMap() {
@@ -17,6 +19,7 @@ class UserProfile {
       'displayName': displayName,
       'email': email,
       'householdId': householdId,
+      'pin': pin,
     };
   }
 
@@ -26,6 +29,7 @@ class UserProfile {
       displayName: map['displayName'] as String,
       email: map['email'] as String,
       householdId: map['householdId'] as String?,
+      pin: map['pin'] as String?,
     );
   }
 }

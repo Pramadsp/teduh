@@ -81,6 +81,26 @@ class AuthService {
         .map((doc) => doc.exists && doc.data() != null ? UserProfile.fromMap(doc.data()!) : null);
   }
 
+  // Simpan PIN 6 Digit Baru
+  Future<void> setUserPin({
+    required String uid,
+    required String pin,
+  }) async {
+    await _firestore.collection('users').doc(uid).update({
+      'pin': pin,
+    });
+  }
+
+  // Verifikasi PIN 6 Digit
+  Future<bool> verifyUserPin({
+    required String uid,
+    required String inputPin,
+  }) async {
+    final profile = await getUserProfile(uid);
+    if (profile == null || profile.pin == null) return false;
+    return profile.pin == inputPin;
+  }
+
   // Update Display Name
   Future<void> updateDisplayName({
     required String uid,

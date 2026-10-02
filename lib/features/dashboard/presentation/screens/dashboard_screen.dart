@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import '../../../../core/router/shell_scaffold.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/date_range_helper.dart';
 import '../../../../core/utils/financial_calculator.dart';
@@ -14,11 +14,20 @@ import '../../../transactions/domain/transaction_model.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
 import '../../../transactions/presentation/widgets/transaction_form_modal.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final transactionsAsync = ref.watch(transactionsProvider);
     final now = DateTime.now();
 
@@ -49,12 +58,14 @@ class DashboardScreen extends ConsumerWidget {
       ),
       body: transactionsAsync.when(
         data: (allTransactions) {
+          final allTimeSummary = FinancialSummary.calculate(allTransactions);
+
           final currentMonthRange = DateRangeHelper.getMonthlyRange(now);
           final currentMonthTxs = allTransactions
               .where((tx) => currentMonthRange.contains(tx.date))
               .toList();
 
-          final summary = FinancialSummary.calculate(currentMonthTxs);
+          final monthlySummary = FinancialSummary.calculate(currentMonthTxs);
           final recentTxs = allTransactions.take(5).toList();
 
           return SingleChildScrollView(
@@ -97,7 +108,7 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'TOTAL SALDO GRUP (${DateUtilsId.formatMonthYear(now)})',
+                              'TOTAL SALDO GRUP',
                               style: TextStyle(
                                 color: AppColors.cream.withValues(alpha: 0.85),
                                 fontSize: 11,
@@ -109,7 +120,7 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          CurrencyUtils.formatRupiah(summary.balance),
+                          CurrencyUtils.formatRupiah(allTimeSummary.balance),
                           style: const TextStyle(
                             color: AppColors.cream,
                             fontSize: 32,
@@ -120,7 +131,7 @@ class DashboardScreen extends ConsumerWidget {
                         const SizedBox(height: 18),
 
                         // Sub-seksi Kartu Saldo Per-Anggota
-                        if (summary.userBalances.isNotEmpty) ...[
+                        if (allTimeSummary.userBalances.isNotEmpty) ...[
                           const Text(
                             'SALDO PER-ANGGOTA',
                             style: TextStyle(
@@ -132,7 +143,7 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 8),
                           Row(
-                            children: summary.userBalances.values.map((u) {
+                            children: allTimeSummary.userBalances.values.map((u) {
                               return Expanded(
                                 child: Container(
                                   margin: const EdgeInsets.only(right: 8),
@@ -197,7 +208,7 @@ class DashboardScreen extends ConsumerWidget {
                           const SizedBox(height: 18),
                         ],
 
-                        // Indikator Pemasukan & Pengeluaran Keluarga
+                        // Indikator Pemasukan & Pengeluaran Bulan Ini
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
@@ -227,15 +238,18 @@ class DashboardScreen extends ConsumerWidget {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Pemasukan Grup',
+                                            'Pemasukan (${DateUtilsId.formatMonthYear(now)})',
                                             style: TextStyle(
-                                              color: AppColors.cream.withValues(alpha: 0.8),
-                                              fontSize: 11,
+                                              color: AppColors.cream.withValues(alpha: 0.85),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
-                                            CurrencyUtils.formatRupiah(summary.totalIncome),
+                                            CurrencyUtils.formatRupiah(monthlySummary.totalIncome),
                                             style: const TextStyle(
                                               color: AppColors.cream,
                                               fontWeight: FontWeight.bold,
@@ -277,15 +291,18 @@ class DashboardScreen extends ConsumerWidget {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Pengeluaran Grup',
+                                            'Pengeluaran (${DateUtilsId.formatMonthYear(now)})',
                                             style: TextStyle(
-                                              color: AppColors.cream.withValues(alpha: 0.8),
-                                              fontSize: 11,
+                                              color: AppColors.cream.withValues(alpha: 0.85),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
-                                            CurrencyUtils.formatRupiah(summary.totalExpense),
+                                            CurrencyUtils.formatRupiah(monthlySummary.totalExpense),
                                             style: const TextStyle(
                                               color: AppColors.cream,
                                               fontWeight: FontWeight.bold,
@@ -322,7 +339,7 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => context.go('/transactions'),
+                      onPressed: () => MainScreen.switchTab(context, 1),
                       child: const Text(
                         'Lihat Semua',
                         style: TextStyle(

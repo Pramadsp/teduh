@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency_input_formatter.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../auth/domain/user_profile.dart';
+import '../../../auth/presentation/widgets/pin_verification_modal.dart';
 import '../../../transactions/domain/transaction_model.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
 import '../../domain/household_model.dart';
@@ -66,6 +67,9 @@ class _TransferModalState extends ConsumerState<TransferModal> {
 
   Future<void> _submitTransfer(UserProfile senderProfile, UserProfile receiverProfile) async {
     if (!_formKey.currentState!.validate()) return;
+
+    final verified = await PinVerificationModal.show(context, currentUid: widget.currentUid);
+    if (verified != true) return;
 
     setState(() {
       _isSubmitting = true;

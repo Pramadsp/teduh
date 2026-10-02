@@ -3,11 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teduh/core/theme/app_colors.dart';
 import 'package:teduh/features/categories/presentation/screens/category_list_screen.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
@@ -80,7 +89,7 @@ class SettingsScreen extends ConsumerWidget {
                 style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
               ),
               subtitle: Text(
-                '0.5.0 (Teduh Firebase Beta)',
+                'v0.9.1 (Teduh Group Release)',
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.ink.withValues(alpha: 0.6),

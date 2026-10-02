@@ -1,49 +1,79 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import '../../features/auth/presentation/screens/profile_screen.dart';
+import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/reports/presentation/screens/report_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/transactions/presentation/screens/transaction_list_screen.dart';
 
-class ShellScaffold extends StatelessWidget {
-  final Widget child;
+class MainScreen extends StatefulWidget {
+  final int initialIndex;
 
-  const ShellScaffold({super.key, required this.child});
+  const MainScreen({super.key, this.initialIndex = 0});
 
-  int _calculateSelectedIndex(BuildContext context) {
-    final String location = GoRouterState.of(context).uri.toString();
-    if (location.startsWith('/transactions')) return 1;
-    if (location.startsWith('/reports')) return 2;
-    if (location.startsWith('/settings')) return 3;
-    if (location.startsWith('/profile')) return 4;
-    return 0;
+  static void switchTab(BuildContext context, int index) {
+    final state = context.findAncestorStateOfType<_MainScreenState>();
+    state?.onItemTapped(index);
   }
 
-  void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        context.go('/dashboard');
-        break;
-      case 1:
-        context.go('/transactions');
-        break;
-      case 2:
-        context.go('/reports');
-        break;
-      case 3:
-        context.go('/settings');
-        break;
-      case 4:
-        context.go('/profile');
-        break;
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  late PageController _pageController;
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: _selectedIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void onItemTapped(int index) {
+    if (index == _selectedIndex) return;
+    setState(() {
+      _selectedIndex = index;
+    });
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final selectedIndex = _calculateSelectedIndex(context);
-
     return Scaffold(
-      body: child,
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        onPageChanged: (index) {
+          if (_selectedIndex != index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          }
+        },
+        children: const [
+          DashboardScreen(),
+          TransactionListScreen(),
+          ReportScreen(),
+          SettingsScreen(),
+          ProfileScreen(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (index) => _onItemTapped(index, context),
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: onItemTapped,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
@@ -75,3 +105,5 @@ class ShellScaffold extends StatelessWidget {
     );
   }
 }
+
+typedef ShellScaffold = MainScreen;

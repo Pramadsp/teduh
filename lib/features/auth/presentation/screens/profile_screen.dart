@@ -2,14 +2,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:teduh/features/auth/presentation/providers/pin_lock_provider.dart';
 import 'package:teduh/core/theme/app_colors.dart';
 import 'package:teduh/features/auth/data/auth_service.dart';
 import 'package:teduh/features/auth/domain/user_profile.dart';
 import 'package:teduh/features/household/domain/household_model.dart';
 import 'package:teduh/features/household/presentation/widgets/transfer_modal.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
   void _showEditNameDialog(BuildContext context, String currentUid, String currentName) {
     final nameController = TextEditingController(text: currentName);
@@ -135,7 +144,8 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    super.build(context);
     final authService = AuthService();
     final currentUser = authService.currentUser;
 
@@ -379,6 +389,7 @@ class ProfileScreen extends ConsumerWidget {
                       );
 
                       if (confirm == true) {
+                        ref.read(pinLockProvider.notifier).lock();
                         await authService.logout();
                       }
                     },

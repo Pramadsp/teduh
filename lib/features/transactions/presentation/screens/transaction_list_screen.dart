@@ -14,9 +14,12 @@ class TransactionListScreen extends ConsumerStatefulWidget {
   ConsumerState<TransactionListScreen> createState() => _TransactionListScreenState();
 }
 
-class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
+class _TransactionListScreenState extends ConsumerState<TransactionListScreen> with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void dispose() {
@@ -93,6 +96,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final transactionsAsync = ref.watch(transactionsProvider);
     String? currentUid;
     try {

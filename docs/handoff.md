@@ -1,9 +1,9 @@
 # Catatan Handoff - Proyek Teduh
 
 **Tanggal Handoff:** 2 Oktober 2026  
-**Progress Terakhir:** Fase 0 s.d. Fase 8 Selesai + Patch Generalisasi Grup (`v0.8.1`)  
+**Progress Terakhir:** Fase 0 s.d. Fase 8 Selesai + PIN App Lock & Sesi 24 Jam (`v0.9.1`)  
 **Repository:** `https://github.com/Pramadsp/teduh.git` (Branch `main`)  
-**Versi Terakhir:** `0.8.1+10`
+**Versi Terakhir:** `0.9.1+14`
 
 ---
 
@@ -15,8 +15,8 @@
 5. **Fase 4 (Manajemen Kategori):** Selesai (`v0.4.0`) - Tab Kelola Kategori di Pengaturan, dialog tambah/edit, proteksi hapus kategori terpakai.
 6. **Fase 5 (Firebase & Household):** Selesai (`v0.5.0`) - Firebase Auth (Email/Pass), Household 2-6 orang dengan kode 6 karakter, Firestore Real-Time Stream (`snapshots()`) & Offline Persistence.
 7. **Fase 6 (Ekspor PDF & Excel):** Selesai (`v0.6.0`) - Generator PDF (`pdf` + `printing`) dengan ringkasan & tabel multi-halaman, Generator Excel (`excel`) dengan nominal bertipe Integer, terintegrasi dengan `open_filex` & `share_plus`.
-8. **Fase 7 (Penyempurnaan & Asset Polishing):** Selesai (`v0.7.0`) - Custom App Launcher Icon (`flutter_launcher_icons`), Search Bar & Filter real-time transaksi, Animasi Transisi Smooth antar tab (`FadeTransition`), Fitur edit nama profil real-time, Polishing Empty States & Loading States (disabled button + spinner).
-9. **Fase 8 (Saldo Per-User, Role Admin, Transfer Saldo & Generalisasi Grup):** Selesai (`v0.8.1`) - Grup Multi-Member (maksimal 6 pengguna), Role Leader/Admin (`isOwner`), Izin Transfer Dynamic (`canTransfer`), Modal Transfer Saldo dengan Double-Entry Settlement Log, Breakdown Saldo Per-Anggota di Beranda, Restriksi Otorisasi Transaksi Pasangan, Penyeragaman Form Login (`Nama Lengkap`), serta Generalisasi Teks UI menjadi **Grup**.
+8. **Fase 7 (Penyempurnaan & Asset Polishing):** Selesai (`v0.7.0`) - Custom App Launcher Icon (`flutter_launcher_icons`), Search Bar & Filter real-time transaksi, Fitur edit nama profil real-time, Polishing Empty States & Loading States (disabled button + spinner).
+9. **Fase 8 (Saldo Per-User, Dynamic Role, Transfer Saldo, App Lock & Sesi 24 Jam):** Selesai (`v0.9.1`) - Grup Multi-Member (maksimal 6 pengguna), Role Leader/Admin (`isOwner`), Izin Transfer Dynamic (`canTransfer`), Modal Transfer Saldo dengan Double-Entry Settlement Log, Breakdown Saldo Per-Anggota di Beranda (All-Time Real Balance), Restriksi Otorisasi Transaksi Pasangan, Penyeragaman Form Login (`Nama Lengkap`), 0% Kedip Navigasi via `MainScreen` + `AuthGate` Root, Update Versi Aplikasi `v0.9.1`, **Keamanan PIN 6-Digit Gate saat Login Ulang & Resume (Minimize)**, serta **Perpanjangan Sesi Login 24 Jam**.
 
 ---
 

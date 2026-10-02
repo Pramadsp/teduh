@@ -22,9 +22,12 @@ class ReportScreen extends ConsumerStatefulWidget {
   ConsumerState<ReportScreen> createState() => _ReportScreenState();
 }
 
-class _ReportScreenState extends ConsumerState<ReportScreen> {
+class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepAliveClientMixin {
   ReportPeriodType _selectedPeriod = ReportPeriodType.monthly;
   DateTime _selectedDate = DateTime.now();
+
+  @override
+  bool get wantKeepAlive => true;
 
   final List<Color> _chartColors = [
     AppColors.expense,
@@ -279,6 +282,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final transactionsAsync = ref.watch(transactionsProvider);
     final currentRange = _getCurrentRange();
 
