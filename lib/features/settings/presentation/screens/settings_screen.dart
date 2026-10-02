@@ -89,7 +89,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with AutomaticK
                 style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
               ),
               subtitle: Text(
-                'v0.9.1 (Teduh Group Release)',
+                'v1.0.0 (Teduh Official Release)',
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.ink.withValues(alpha: 0.6),
