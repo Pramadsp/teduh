@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/biometric_service.dart';
 import '../../domain/user_profile.dart';
 
 class PinVerificationModal extends ConsumerStatefulWidget {
@@ -31,6 +32,23 @@ class _PinVerificationModalState extends ConsumerState<PinVerificationModal> {
   String _inputPin = '';
   bool _isLoading = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _triggerBiometricAuth();
+    });
+  }
+
+  Future<void> _triggerBiometricAuth() async {
+    final authenticated = await BiometricService.authenticate(
+      localizedReason: 'Konfirmasi sidik jari untuk mengirim transfer saldo',
+    );
+    if (authenticated && mounted) {
+      Navigator.of(context).pop(true);
+    }
+  }
 
   void _onKeyPress(String val, String correctPin) {
     if (_inputPin.length < 6) {
@@ -224,7 +242,23 @@ class _PinVerificationModalState extends ConsumerState<PinVerificationModal> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            const SizedBox(width: 60, height: 60),
+            SizedBox(
+              width: 60,
+              height: 60,
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: _triggerBiometricAuth,
+                  child: const Icon(
+                    Icons.fingerprint_rounded,
+                    color: AppColors.sageDark,
+                    size: 26,
+                  ),
+                ),
+              ),
+            ),
             _buildNumpadBtn('0', correctPin),
             SizedBox(
               width: 60,

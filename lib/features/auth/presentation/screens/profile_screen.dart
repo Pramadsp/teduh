@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teduh/features/auth/presentation/providers/pin_lock_provider.dart';
 import 'package:teduh/core/theme/app_colors.dart';
+import 'package:teduh/core/utils/biometric_service.dart';
 import 'package:teduh/features/auth/data/auth_service.dart';
 import 'package:teduh/features/auth/domain/user_profile.dart';
 import 'package:teduh/features/household/domain/household_model.dart';
@@ -303,6 +304,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with AutomaticKee
                       );
                     },
                   ),
+
+                const SizedBox(height: 28),
+
+                // Kartu Keamanan & Privasi Biometrik
+                const BiometricSettingCard(),
 
                 const SizedBox(height: 28),
 
@@ -647,7 +653,7 @@ class ActiveHouseholdCard extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // Section Title Anggota Keluarga
+                // Section Title Anggota Grup
                 Row(
                   children: [
                     const Icon(
@@ -657,7 +663,7 @@ class ActiveHouseholdCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'ANGGOTA KELUARGA (${household.memberIds.length}/6)',
+                      'ANGGOTA GRUP (${household.memberIds.length}/6)',
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -974,6 +980,128 @@ class WaitingPartnerTile extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BiometricSettingCard extends StatefulWidget {
+  const BiometricSettingCard({super.key});
+
+  @override
+  State<BiometricSettingCard> createState() => _BiometricSettingCardState();
+}
+
+class _BiometricSettingCardState extends State<BiometricSettingCard> {
+  bool _isSupported = false;
+  bool _isEnabled = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricStatus();
+  }
+
+  Future<void> _loadBiometricStatus() async {
+    final supported = await BiometricService.isBiometricSupported();
+    final enabled = await BiometricService.isBiometricEnabled();
+    if (mounted) {
+      setState(() {
+        _isSupported = supported;
+        _isEnabled = enabled;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.sand,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.sageDark.withValues(alpha: 0.15),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.ink.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(
+                Icons.shield_outlined,
+                size: 16,
+                color: AppColors.sageDark,
+              ),
+              SizedBox(width: 6),
+              Text(
+                'KEAMANAN & PRIVASI',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0,
+                  color: AppColors.sageDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.sageDark.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.fingerprint_rounded, color: AppColors.sageDark, size: 24),
+            ),
+            title: const Text(
+              'Buka App & Transfer dengan Biometrik',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: AppColors.ink,
+              ),
+            ),
+            subtitle: Text(
+              _isSupported
+                  ? 'Gunakan sidik jari / Face ID untuk verifikasi cepat'
+                  : 'Perangkat tidak mendukung biometrik',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.ink.withValues(alpha: 0.6),
+              ),
+            ),
+            trailing: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.sageDark),
+                  )
+                : Switch.adaptive(
+                    value: _isEnabled && _isSupported,
+                    activeTrackColor: AppColors.sageDark,
+                    onChanged: _isSupported
+                        ? (val) async {
+                            setState(() => _isEnabled = val);
+                            await BiometricService.setBiometricEnabled(val);
+                          }
+                        : null,
+                  ),
           ),
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/biometric_service.dart';
 import '../../data/auth_service.dart';
 
 enum PinMode { setup, verify }
@@ -33,6 +34,29 @@ class _PinScreenState extends ConsumerState<PinScreen> {
   bool _isConfirmStep = false;
   bool _isLoading = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.mode == PinMode.verify) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _triggerBiometricAuth();
+      });
+    }
+  }
+
+  Future<void> _triggerBiometricAuth() async {
+    final authenticated = await BiometricService.authenticate(
+      localizedReason: 'Verifikasi sidik jari untuk membuka aplikasi Teduh',
+    );
+    if (authenticated && mounted) {
+      widget.onSuccess?.call();
+      widget.onVerified?.call();
+      if (widget.onSuccess == null && widget.onVerified == null) {
+        Navigator.of(context).pop(true);
+      }
+    }
+  }
 
   void _onKeyPress(String val) {
     if (_inputPin.length < 6) {
@@ -275,7 +299,25 @@ class _PinScreenState extends ConsumerState<PinScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            const SizedBox(width: 68, height: 68),
+            widget.mode == PinMode.verify
+                ? SizedBox(
+                    width: 68,
+                    height: 68,
+                    child: Material(
+                      color: Colors.transparent,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: _triggerBiometricAuth,
+                        child: const Icon(
+                          Icons.fingerprint_rounded,
+                          color: AppColors.sageDark,
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox(width: 68, height: 68),
             _buildNumpadBtn('0'),
             SizedBox(
               width: 68,
