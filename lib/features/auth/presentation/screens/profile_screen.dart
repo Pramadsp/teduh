@@ -10,6 +10,129 @@ import 'package:teduh/features/household/domain/household_model.dart';
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
+  void _showEditNameDialog(BuildContext context, String currentUid, String currentName) {
+    final nameController = TextEditingController(text: currentName);
+    final formKey = GlobalKey<FormState>();
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            backgroundColor: AppColors.cream,
+            title: const Text(
+              'Ubah Nama Profil',
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.ink),
+            ),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    enabled: !isSubmitting,
+                    style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                    decoration: InputDecoration(
+                      labelText: 'Nama Lengkap',
+                      labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                      filled: true,
+                      fillColor: AppColors.sand,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                      ),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Nama wajib diisi';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting ? null : () => Navigator.of(ctx).pop(),
+                child: const Text('Batal', style: TextStyle(color: AppColors.sageDark)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.sageDark,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        setDialogState(() {
+                          isSubmitting = true;
+                        });
+
+                        try {
+                          final newName = nameController.text.trim();
+                          final authService = AuthService();
+                          await authService.updateDisplayName(uid: currentUid, newDisplayName: newName);
+
+                          if (ctx.mounted) {
+                            Navigator.of(ctx).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: AppColors.sageDark,
+                                content: Text(
+                                  'Nama profil berhasil diperbarui',
+                                  style: TextStyle(color: AppColors.cream),
+                                ),
+                              ),
+                            );
+                          }
+                        } catch (_) {
+                          if (context.mounted) {
+                            setDialogState(() {
+                              isSubmitting = false;
+                            });
+                          }
+                        }
+                      },
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: AppColors.cream,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Simpan',
+                        style: TextStyle(color: AppColors.cream, fontWeight: FontWeight.bold),
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authService = AuthService();
@@ -88,12 +211,31 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Text(
-                        profile.displayName,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.ink,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            profile.displayName,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.ink,
+                                ),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(4),
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: AppColors.sageDark,
                             ),
+                            tooltip: 'Ubah Nama',
+                            onPressed: () {
+                              _showEditNameDialog(context, profile.uid, profile.displayName);
+                            },
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(

@@ -81,6 +81,24 @@ class AuthService {
         .map((doc) => doc.exists && doc.data() != null ? UserProfile.fromMap(doc.data()!) : null);
   }
 
+  // Update Display Name
+  Future<void> updateDisplayName({
+    required String uid,
+    required String newDisplayName,
+  }) async {
+    final cleanName = newDisplayName.trim();
+    if (cleanName.isEmpty) return;
+
+    final user = _auth.currentUser;
+    if (user != null && user.uid == uid) {
+      await user.updateDisplayName(cleanName);
+    }
+
+    await _firestore.collection('users').doc(uid).update({
+      'displayName': cleanName,
+    });
+  }
+
   // Logout
   Future<void> logout() async {
     await _auth.signOut();

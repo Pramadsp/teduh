@@ -242,18 +242,45 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 if (recentTxs.isEmpty)
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: AppColors.sand,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: AppColors.sageDark.withValues(alpha: 0.15),
+                        width: 1.5,
                       ),
                     ),
-                    child: const Text(
-                      'Belum ada transaksi tercatat.',
-                      style: TextStyle(color: AppColors.ink),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.sageDark.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.receipt_long_outlined, size: 32, color: AppColors.sageDark),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Belum Ada Transaksi Tercatat',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Catatan transaksi harian Anda akan tampil di sini.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.ink.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 else

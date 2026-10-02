@@ -302,7 +302,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               };
 
               return IconButton(
-                icon: const Icon(Icons.output_rounded, color: AppColors.sageDark),
+                icon: const Icon(Icons.file_download_outlined, color: AppColors.sageDark),
                 tooltip: 'Ekspor Laporan',
                 onPressed: () {
                   _showExportOptions(
@@ -427,18 +427,45 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                 if (periodTxs.isEmpty) {
                   return Container(
                     margin: const EdgeInsets.only(top: 20),
-                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: AppColors.sand,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: AppColors.sageDark.withValues(alpha: 0.15),
+                        width: 1.5,
                       ),
                     ),
-                    child: const Text(
-                      'Tidak ada transaksi pada periode ini.',
-                      style: TextStyle(color: AppColors.ink),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.sageDark.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.receipt_long_outlined, size: 36, color: AppColors.sageDark),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          'Tidak Ada Transaksi',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Belum ada transaksi tercatat pada periode ini.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.ink.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }

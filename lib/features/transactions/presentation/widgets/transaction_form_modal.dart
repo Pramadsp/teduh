@@ -37,6 +37,7 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
   late TextEditingController _noteController;
   Category? _selectedCategory;
   late DateTime _selectedDate;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -59,7 +60,7 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
     super.dispose();
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,32 +69,46 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
       return;
     }
 
-    final amount = CurrencyInputFormatter.parseAmount(_amountController.text);
-    final isEditing = widget.transaction != null;
+    setState(() {
+      _isSubmitting = true;
+    });
 
-    final newTx = Transaction(
-      id: widget.transaction?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      title: _titleController.text.trim(),
-      type: _selectedType,
-      amount: amount,
-      categoryId: _selectedCategory!.id,
-      categoryName: _selectedCategory!.name,
-      note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
-      date: _selectedDate,
-      createdBy: widget.transaction?.createdBy ?? 'user_1',
-      createdByName: widget.transaction?.createdByName ?? 'Saya',
-      createdAt: widget.transaction?.createdAt ?? DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+    try {
+      final amount = CurrencyInputFormatter.parseAmount(_amountController.text);
+      final isEditing = widget.transaction != null;
 
-    final notifier = ref.read(transactionsProvider.notifier);
-    if (isEditing) {
-      notifier.updateTransaction(newTx);
-    } else {
-      notifier.addTransaction(newTx);
+      final newTx = Transaction(
+        id: widget.transaction?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        title: _titleController.text.trim(),
+        type: _selectedType,
+        amount: amount,
+        categoryId: _selectedCategory!.id,
+        categoryName: _selectedCategory!.name,
+        note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+        date: _selectedDate,
+        createdBy: widget.transaction?.createdBy ?? 'user_1',
+        createdByName: widget.transaction?.createdByName ?? 'Saya',
+        createdAt: widget.transaction?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final notifier = ref.read(transactionsProvider.notifier);
+      if (isEditing) {
+        await notifier.updateTransaction(newTx);
+      } else {
+        await notifier.addTransaction(newTx);
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
-
-    Navigator.of(context).pop();
   }
 
   @override
@@ -365,14 +380,25 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _submitForm,
-                child: Padding(
+                onPressed: _isSubmitting ? null : _submitForm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.sageDark,
+                  foregroundColor: AppColors.cream,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  child: Text(
-                    widget.transaction == null ? 'Simpan' : 'Perbarui',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
                 ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: AppColors.cream,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        widget.transaction == null ? 'Simpan' : 'Perbarui',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
               ),
               const SizedBox(height: 20),
             ],

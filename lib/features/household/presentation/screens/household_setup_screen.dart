@@ -186,9 +186,9 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
                             ),
                             child: _isLoading
                                 ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(color: AppColors.cream, strokeWidth: 2.5),
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(color: AppColors.cream, strokeWidth: 2),
                                   )
                                 : const Text(
                                     'Buat Grup Keluarga',
@@ -233,9 +233,9 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
                             ),
                             child: _isLoading
                                 ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(color: AppColors.cream, strokeWidth: 2.5),
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(color: AppColors.cream, strokeWidth: 2),
                                   )
                                 : const Text(
                                     'Gabung Grup',

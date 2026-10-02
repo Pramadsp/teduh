@@ -31,6 +31,7 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: category?.name ?? '');
     CategoryType selectedType = category?.type ?? defaultType;
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
@@ -81,8 +82,26 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: nameController,
-                    style: const TextStyle(color: AppColors.ink),
-                    decoration: const InputDecoration(labelText: 'Nama Kategori'),
+                    enabled: !isSubmitting,
+                    style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                    decoration: InputDecoration(
+                      labelText: 'Nama Kategori',
+                      labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                      filled: true,
+                      fillColor: AppColors.sand,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                      ),
+                    ),
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
                         return 'Nama kategori wajib diisi';
@@ -95,38 +114,61 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
+                onPressed: isSubmitting ? null : () => Navigator.of(ctx).pop(),
                 child: const Text('Batal', style: TextStyle(color: AppColors.sageDark)),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  if (!formKey.currentState!.validate()) return;
-                  final repo = ref.read(categoryRepositoryProvider);
-                  final name = nameController.text.trim();
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        setModalState(() {
+                          isSubmitting = true;
+                        });
 
-                  if (category == null) {
-                    final newCat = Category(
-                      id: 'cat_custom_${DateTime.now().millisecondsSinceEpoch}',
-                      name: name,
-                      type: selectedType,
-                      isDefault: false,
-                    );
-                    await repo.addCategory(newCat);
-                  } else {
-                    final updatedCat = Category(
-                      id: category.id,
-                      name: name,
-                      type: selectedType,
-                      iconKey: category.iconKey,
-                      isDefault: category.isDefault,
-                    );
-                    await repo.updateCategory(updatedCat);
-                  }
+                        try {
+                          final repo = ref.read(categoryRepositoryProvider);
+                          final name = nameController.text.trim();
 
-                  ref.read(categoriesProvider.notifier).loadCategories();
-                  if (ctx.mounted) Navigator.of(ctx).pop();
-                },
-                child: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.bold)),
+                          if (category == null) {
+                            final newCat = Category(
+                              id: 'cat_custom_${DateTime.now().millisecondsSinceEpoch}',
+                              name: name,
+                              type: selectedType,
+                              isDefault: false,
+                            );
+                            await repo.addCategory(newCat);
+                          } else {
+                            final updatedCat = Category(
+                              id: category.id,
+                              name: name,
+                              type: selectedType,
+                              iconKey: category.iconKey,
+                              isDefault: category.isDefault,
+                            );
+                            await repo.updateCategory(updatedCat);
+                          }
+
+                          ref.read(categoriesProvider.notifier).loadCategories();
+                          if (ctx.mounted) Navigator.of(ctx).pop();
+                        } catch (_) {
+                          if (context.mounted) {
+                            setModalState(() {
+                              isSubmitting = false;
+                            });
+                          }
+                        }
+                      },
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: AppColors.cream,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Simpan', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           );
@@ -227,17 +269,36 @@ class _CategoryListScreenState extends ConsumerState<CategoryListScreen>
       appBar: AppBar(
         title: const Text('Kelola Kategori'),
         centerTitle: true,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.sageDark,
-          labelColor: AppColors.sageDark,
-          unselectedLabelColor: AppColors.ink,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-          tabs: const [
-            Tab(text: 'Pengeluaran'),
-            Tab(text: 'Pemasukan'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(54),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: AppColors.sand,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.sageDark.withValues(alpha: 0.15),
+              ),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: AppColors.sageDark,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: AppColors.cream,
+              unselectedLabelColor: AppColors.ink,
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              tabs: const [
+                Tab(text: 'Pengeluaran'),
+                Tab(text: 'Pemasukan'),
+              ],
+            ),
+          ),
         ),
       ),
       body: categoriesAsync.when(
