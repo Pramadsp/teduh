@@ -1,9 +1,9 @@
 # Catatan Handoff - Proyek Teduh
 
 **Tanggal Handoff:** 2 Oktober 2026  
-**Progress Terakhir:** Fase 0 s.d. Fase 8 Selesai (`v0.8.0`)  
+**Progress Terakhir:** Fase 0 s.d. Fase 8 Selesai + Patch Generalisasi Grup (`v0.8.1`)  
 **Repository:** `https://github.com/Pramadsp/teduh.git` (Branch `main`)  
-**Versi Terakhir:** `0.8.0+9`
+**Versi Terakhir:** `0.8.1+10`
 
 ---
 
@@ -16,7 +16,7 @@
 6. **Fase 5 (Firebase & Household):** Selesai (`v0.5.0`) - Firebase Auth (Email/Pass), Household 2-6 orang dengan kode 6 karakter, Firestore Real-Time Stream (`snapshots()`) & Offline Persistence.
 7. **Fase 6 (Ekspor PDF & Excel):** Selesai (`v0.6.0`) - Generator PDF (`pdf` + `printing`) dengan ringkasan & tabel multi-halaman, Generator Excel (`excel`) dengan nominal bertipe Integer, terintegrasi dengan `open_filex` & `share_plus`.
 8. **Fase 7 (Penyempurnaan & Asset Polishing):** Selesai (`v0.7.0`) - Custom App Launcher Icon (`flutter_launcher_icons`), Search Bar & Filter real-time transaksi, Animasi Transisi Smooth antar tab (`FadeTransition`), Fitur edit nama profil real-time, Polishing Empty States & Loading States (disabled button + spinner).
-9. **Fase 8 (Saldo Per-User, Role Admin & Transfer Saldo):** Selesai (`v0.8.0`) - Grup Multi-Member (maksimal 6 pengguna), Role Leader/Admin (`isOwner`), Izin Transfer Dynamic (`canTransfer`), Modal Transfer Saldo dengan Double-Entry Settlement Log, Breakdown Saldo Per-Anggota di Beranda, Restriksi Otorisasi Transaksi Pasangan, serta Penyeragaman Form Login (`Nama Lengkap`).
+9. **Fase 8 (Saldo Per-User, Role Admin, Transfer Saldo & Generalisasi Grup):** Selesai (`v0.8.1`) - Grup Multi-Member (maksimal 6 pengguna), Role Leader/Admin (`isOwner`), Izin Transfer Dynamic (`canTransfer`), Modal Transfer Saldo dengan Double-Entry Settlement Log, Breakdown Saldo Per-Anggota di Beranda, Restriksi Otorisasi Transaksi Pasangan, Penyeragaman Form Login (`Nama Lengkap`), serta Generalisasi Teks UI menjadi **Grup**.
 
 ---
 

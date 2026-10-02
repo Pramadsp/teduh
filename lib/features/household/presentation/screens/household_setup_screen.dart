@@ -84,7 +84,7 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
-        title: const Text('Grup Keluarga'),
+        title: const Text('Setup Grup Keuangan'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -98,6 +98,15 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text(
+              'Buat atau gabung grup untuk mencatat keuangan bersama.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.ink.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 16),
             SegmentedButton<bool>(
               style: SegmentedButton.styleFrom(
                 selectedBackgroundColor: AppColors.sageDark,
@@ -110,7 +119,7 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
               ),
               segments: const [
                 ButtonSegment(value: true, label: Text('Buat Grup Baru')),
-                ButtonSegment(value: false, label: Text('Gabung Kode')),
+                ButtonSegment(value: false, label: Text('Gabung dengan Kode')),
               ],
               selected: {_isCreating},
               onSelectionChanged: (val) {
@@ -167,11 +176,25 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
                         children: [
                           TextFormField(
                             controller: _householdNameController,
-                            style: const TextStyle(color: AppColors.ink),
-                            decoration: const InputDecoration(
-                              labelText: 'Nama Keluarga / Rumah Tangga',
-                              hintText: 'Contoh: Keluarga Pratama',
+                            style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                              labelText: 'Nama Grup',
+                              hintText: 'Contoh: Tabungan Keluarga, Tim Kas, Sahabat',
+                              labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                              filled: true,
                               fillColor: AppColors.cream,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                              ),
                             ),
                             validator: (val) =>
                                 val == null || val.trim().isEmpty ? 'Nama grup wajib diisi' : null,
@@ -191,7 +214,7 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
                                     child: CircularProgressIndicator(color: AppColors.cream, strokeWidth: 2),
                                   )
                                 : const Text(
-                                    'Buat Grup Keluarga',
+                                    'Buat Grup Baru',
                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                   ),
                           ),

@@ -80,7 +80,7 @@ class DashboardScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header Total Saldo Keluarga
+                        // Header Total Saldo Grup
                         Row(
                           children: [
                             Container(
@@ -90,14 +90,14 @@ class DashboardScreen extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Icon(
-                                Icons.family_restroom_rounded,
+                                Icons.groups_rounded,
                                 color: AppColors.cream,
                                 size: 18,
                               ),
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'TOTAL SALDO KELUARGA (${DateUtilsId.formatMonthYear(now)})',
+                              'TOTAL SALDO GRUP (${DateUtilsId.formatMonthYear(now)})',
                               style: TextStyle(
                                 color: AppColors.cream.withValues(alpha: 0.85),
                                 fontSize: 11,
@@ -227,7 +227,7 @@ class DashboardScreen extends ConsumerWidget {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Pemasukan Keluarga',
+                                            'Pemasukan Grup',
                                             style: TextStyle(
                                               color: AppColors.cream.withValues(alpha: 0.8),
                                               fontSize: 11,
@@ -277,7 +277,7 @@ class DashboardScreen extends ConsumerWidget {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Pengeluaran Keluarga',
+                                            'Pengeluaran Grup',
                                             style: TextStyle(
                                               color: AppColors.cream.withValues(alpha: 0.8),
                                               fontSize: 11,
@@ -502,7 +502,7 @@ class DashboardTransferButton extends StatelessWidget {
                   ),
                   icon: const Icon(Icons.swap_horiz_rounded, size: 18, color: AppColors.cream),
                   label: const Text(
-                    'Transfer Saldo Ke Pasangan',
+                    'Transfer Saldo ke Anggota',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.cream),
                   ),
                   onPressed: () {

@@ -442,7 +442,7 @@ class ActiveHouseholdCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
-                    Icons.family_restroom_rounded,
+                    Icons.groups_rounded,
                     color: AppColors.cream,
                     size: 22,
                   ),
@@ -450,7 +450,7 @@ class ActiveHouseholdCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
-                    'Grup Keluarga Active',
+                    'Grup Saya (Aktif)',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -556,7 +556,7 @@ class ActiveHouseholdCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'KODE UNDANGAN PASANGAN',
+                              'KODE UNDANGAN GRUP',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
