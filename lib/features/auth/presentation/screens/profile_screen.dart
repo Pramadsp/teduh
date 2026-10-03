@@ -863,45 +863,68 @@ class MemberProfileTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
 
-              // Switch Toggle Izin Transfer (Tampil jika Admin/Leader mengelola anggota lain)
+              // Interactive Chip Badge Izin Transfer (Tampil jika Admin/Leader mengelola anggota lain)
               if (isCurrentUserAdmin && !isCurrentProfile && !isMemberOwner)
-                Column(
-                  children: [
-                    const Text(
-                      'Izin Transfer',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.sageDark,
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () async {
+                      final authService = AuthService();
+                      await authService.toggleTransferPrivilege(
+                        householdId: household.id,
+                        targetUid: uid,
+                        grant: !hasTransferPermission,
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: hasTransferPermission
+                            ? AppColors.income.withValues(alpha: 0.12)
+                            : AppColors.sand,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: hasTransferPermission
+                              ? AppColors.income.withValues(alpha: 0.4)
+                              : AppColors.sageDark.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            hasTransferPermission
+                                ? Icons.check_circle_rounded
+                                : Icons.add_circle_outline_rounded,
+                            size: 14,
+                            color: hasTransferPermission ? AppColors.income : AppColors.sageDark,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            hasTransferPermission ? 'Izin Transfer' : '+ Beri Izin',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: hasTransferPermission ? AppColors.income : AppColors.sageDark,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(
-                      height: 28,
-                      child: Switch.adaptive(
-                        value: hasTransferPermission,
-                        activeTrackColor: AppColors.sageDark,
-                        onChanged: (val) async {
-                          final authService = AuthService();
-                          await authService.toggleTransferPrivilege(
-                            householdId: household.id,
-                            targetUid: uid,
-                            grant: val,
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                  ),
                 )
               else
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: isCurrentProfile
-                        ? AppColors.sageDark.withValues(alpha: 0.15)
+                        ? AppColors.sageDark.withValues(alpha: 0.12)
                         : (hasTransferPermission
-                            ? AppColors.income.withValues(alpha: 0.15)
+                            ? AppColors.income.withValues(alpha: 0.12)
                             : AppColors.sand),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isCurrentProfile
                           ? AppColors.sageDark.withValues(alpha: 0.3)
@@ -915,7 +938,7 @@ class MemberProfileTile extends StatelessWidget {
                         ? 'Saya'
                         : (hasTransferPermission ? 'Izin Transfer' : 'Anggota'),
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: isCurrentProfile
                           ? AppColors.sageDark
