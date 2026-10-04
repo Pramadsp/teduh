@@ -32,18 +32,15 @@
 
 ---
 
-## ⚠️ Catatan Peringatan / PR untuk Sesi Selanjutnya:
-1. **Cloud Firestore API Disabled Error:**
-   Log mendeteksi error `PERMISSION_DENIED: Cloud Firestore API has not been used in project teduh-7411e before or it is disabled`.
-   - **Solusi:** Di Firebase Console / Google Cloud Console proyek `teduh-7411e`, pastikan Firestore Database sudah dibuat dalam mode production dan API Firestore sudah teraktifkan.
-2. **Notifier Mounted Guard:**
-   Saat logout / pergantian household, pastikan `TransactionsNotifier` dan `CategoriesNotifier` memeriksa properti `mounted` sebelum memanggil `state = ...` agar tidak melempar `Bad state: Tried to use TransactionsNotifier after dispose was called`.
-
----
-
-## 🔜 Rencana Selanjutnya (Fase 6 - Ekspor PDF & Excel):
-- Tombol **Ekspor** di Layar Laporan (pilihan format PDF atau Excel .xlsx).
-- Ekspor mengikuti filter & periode yang sedang aktif.
-- Generator PDF dengan ringkasan & tabel transaksi ber-halaman otomatis.
-- Generator Excel dengan sheet Ringkasan & Transaksi (nominal integer agar bisa dijumlah).
-- Integrasi `share_plus` & `open_filex`.
+## 🔮 Rencana Masa Depan & Roadmap (Teduh v1.1.0 / v2.0.0):
+1. 📸 **[PRIORITAS UTAMA - NEXT TASK] Lampiran Foto Struk / Bukti Transaksi**:
+   - Menambahkan opsi foto kamera / pilih galeri saat menambah/mengedit transaksi.
+   - Menyimpan gambar bukti struk ke **Firebase Storage** dan menampilkan pratinjau foto pada detail transaksi.
+2. 💡 **Anggaran & Batas Pengeluaran Bulanan (Category Budgeting & Warning)**:
+   - Penetapan batas budget per kategori oleh Admin/Leader dan progress bar persentase pemakaian di Beranda.
+3. 🔄 **Transaksi Berulang & Tagihan Rutin (Recurring Expenses)**:
+   - Pengingat/pencatat otomatis untuk tagihan bulanan (Listrik, Wi-Fi, BPJS, Kontrakan/KPR).
+4. 💼 **Dompet Multi-Rekening / Sub-Wallet**:
+   - Pemisahan saldo per-user ke dalam sub-dompet (Kas Harian, Tabungan Darurat, Investasi).
+5. 📈 **Analisis AI Insight Keuangan**:
+   - Ringkasan teks pintar untuk saran penghematan di layar Laporan.
