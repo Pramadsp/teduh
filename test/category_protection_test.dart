@@ -11,8 +11,11 @@ void main() {
     testWidgets('CategoryListScreen renders tabs and lists categories',
         (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            activeHouseholdIdProvider.overrideWith((ref) => Stream.value(null)),
+          ],
+          child: const MaterialApp(
             home: CategoryListScreen(),
           ),
         ),
@@ -45,6 +48,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
+          activeHouseholdIdProvider.overrideWith((ref) => Stream.value(null)),
           transactionRepositoryProvider.overrideWithValue(txRepo),
         ],
       );

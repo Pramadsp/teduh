@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/router/shell_scaffold.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency_input_formatter.dart';
 import '../../../../core/utils/formatters.dart';
@@ -117,7 +118,10 @@ class _TransferModalState extends ConsumerState<TransferModal> {
       await notifier.addTransaction(txIn);
 
       if (mounted) {
-        Navigator.of(context).pop();
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        MainScreen.switchTab(context, 0);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.sageDark,
@@ -273,50 +277,49 @@ class _TransferModalState extends ConsumerState<TransferModal> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Selection Penerima jika Anggota > 1
-                      if (receiverProfiles.length > 1) ...[
-                        DropdownButtonFormField<UserProfile>(
-                          initialValue: activeReceiver,
-                          dropdownColor: AppColors.sand,
-                          icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.sageDark),
-                          style: const TextStyle(color: AppColors.ink, fontSize: 15, fontWeight: FontWeight.bold),
-                          decoration: InputDecoration(
-                            labelText: 'Pilih Penerima Transfer',
-                            labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
-                            filled: true,
-                            fillColor: AppColors.sand,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
-                            ),
+                      // Selection Penerima Transfer Saldo (Selalu Tampil)
+                      DropdownButtonFormField<String>(
+                        initialValue: activeReceiver.uid,
+                        dropdownColor: AppColors.sand,
+                        icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.sageDark),
+                        style: const TextStyle(color: AppColors.ink, fontSize: 15, fontWeight: FontWeight.bold),
+                        decoration: InputDecoration(
+                          labelText: 'Penerima Transfer Saldo',
+                          labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                          filled: true,
+                          fillColor: AppColors.sand,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
                           ),
-                          items: receiverProfiles.map((p) {
-                            return DropdownMenuItem(
-                              value: p,
-                              child: Text(
-                                '${p.displayName} (${p.email})',
-                                style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() {
-                                _selectedReceiver = val;
-                              });
-                            }
-                          },
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                      ],
+                        items: receiverProfiles.map((p) {
+                          return DropdownMenuItem<String>(
+                            value: p.uid,
+                            child: Text(
+                              '${p.displayName} (${p.email})',
+                              style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (selectedUid) {
+                          if (selectedUid != null) {
+                            final found = receiverProfiles.firstWhere((p) => p.uid == selectedUid);
+                            setState(() {
+                              _selectedReceiver = found;
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
 
                       // Card Header Transfer (Dari -> Ke)
                       Container(

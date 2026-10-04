@@ -8,8 +8,6 @@ import 'package:teduh/features/auth/presentation/providers/pin_lock_provider.dar
 import 'package:teduh/features/auth/presentation/screens/login_screen.dart';
 import 'package:teduh/features/auth/presentation/screens/pin_screen.dart';
 import 'package:teduh/features/household/presentation/screens/household_setup_screen.dart';
-import 'package:teduh/features/transactions/data/firestore_repositories.dart';
-import 'package:teduh/features/transactions/presentation/providers/transaction_providers.dart';
 
 class AuthGate extends ConsumerWidget {
   final Widget child;
@@ -73,21 +71,8 @@ class AuthGate extends ConsumerWidget {
               );
             }
 
-            // Integrasi Firestore Repositories Real-Time per Household
-            final householdId = profile.householdId!;
-
-            return ProviderScope(
-              overrides: [
-                categoryRepositoryProvider.overrideWithValue(
-                  FirestoreCategoryRepository(householdId: householdId),
-                ),
-                transactionRepositoryProvider.overrideWithValue(
-                  FirestoreTransactionRepository(householdId: householdId),
-                ),
-              ],
-              child: UserActivityDetector(
-                child: child,
-              ),
+            return UserActivityDetector(
+              child: child,
             );
           },
         );

@@ -8,6 +8,7 @@ import 'package:teduh/features/categories/data/category_repository.dart';
 import 'package:teduh/features/categories/domain/category_model.dart';
 import 'package:teduh/features/transactions/data/transaction_repository.dart';
 import 'package:teduh/features/transactions/domain/transaction_model.dart';
+import 'package:teduh/features/transactions/presentation/providers/transaction_providers.dart';
 import 'package:teduh/features/transactions/presentation/screens/transaction_list_screen.dart';
 
 void main() {
@@ -90,8 +91,11 @@ void main() {
     testWidgets('TransactionListScreen displays FAB and renders correctly',
         (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            activeHouseholdIdProvider.overrideWith((ref) => Stream.value(null)),
+          ],
+          child: const MaterialApp(
             home: TransactionListScreen(),
           ),
         ),

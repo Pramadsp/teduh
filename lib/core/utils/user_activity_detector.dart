@@ -38,8 +38,9 @@ class _UserActivityDetectorState extends ConsumerState<UserActivityDetector> wit
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      // Saat aplikasi di-minimize/ditinggal ke background, kunci aplikasi kembali dengan PIN Gate
+    // Kunci aplikasi HANYA saat benar-break di-minimize ke background (paused),
+    // BUKAN saat menggeser Quick Setting / Notification Panel (inactive).
+    if (state == AppLifecycleState.paused) {
       ref.read(pinLockProvider.notifier).lock();
     }
   }

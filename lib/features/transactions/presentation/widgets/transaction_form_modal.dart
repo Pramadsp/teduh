@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency_input_formatter.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../auth/data/auth_service.dart';
 import '../../../categories/domain/category_model.dart';
 import '../../domain/transaction_model.dart';
 import '../providers/transaction_providers.dart';
@@ -77,6 +78,12 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
       final amount = CurrencyInputFormatter.parseAmount(_amountController.text);
       final isEditing = widget.transaction != null;
 
+      final authService = AuthService();
+      final currentUser = authService.currentUser;
+      final userProfile = currentUser != null ? await authService.getUserProfile(currentUser.uid) : null;
+      final currentUid = currentUser?.uid ?? 'user_anonymous';
+      final currentName = userProfile?.displayName ?? currentUser?.displayName ?? currentUser?.email?.split('@').first ?? 'Pengguna';
+
       final newTx = Transaction(
         id: widget.transaction?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         title: _titleController.text.trim(),
@@ -86,8 +93,8 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
         categoryName: _selectedCategory!.name,
         note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
         date: _selectedDate,
-        createdBy: widget.transaction?.createdBy ?? 'user_1',
-        createdByName: widget.transaction?.createdByName ?? 'Saya',
+        createdBy: widget.transaction?.createdBy ?? currentUid,
+        createdByName: widget.transaction?.createdByName ?? currentName,
         createdAt: widget.transaction?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -107,6 +114,12 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
         setState(() {
           _isSubmitting = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan transaksi: $e'),
+            backgroundColor: AppColors.expense,
+          ),
+        );
       }
     }
   }

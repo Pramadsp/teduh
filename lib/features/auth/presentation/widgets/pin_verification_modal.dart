@@ -121,16 +121,31 @@ class _PinVerificationModalState extends ConsumerState<PinVerificationModal> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.sageDark.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(2),
+                Stack(
+                  children: [
+                    Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.sageDark.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      right: 0,
+                      top: -10,
+                      child: IconButton(
+                        icon: const Icon(Icons.close_rounded, color: AppColors.ink, size: 22),
+                        onPressed: () {
+                          Navigator.of(context).pop(false);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 Container(
                   padding: const EdgeInsets.all(12),

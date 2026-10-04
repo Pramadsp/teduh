@@ -296,13 +296,17 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
         actions: [
           transactionsAsync.maybeWhen(
             data: (allTransactions) {
+              final allTimeSummary = FinancialSummary.calculate(allTransactions);
               final periodTxs = allTransactions
                   .where((tx) => currentRange.contains(tx.date))
                   .toList();
-              final summary = FinancialSummary.calculate(periodTxs);
+              final periodRealSummary = FinancialSummary.calculate(
+                periodTxs,
+                excludeInternalTransfers: true,
+              );
 
               final categoryTotalsMap = {
-                for (var cs in summary.categorySummaries) cs.categoryName: cs.totalAmount
+                for (var cs in periodRealSummary.categorySummaries) cs.categoryName: cs.totalAmount
               };
 
               return IconButton(
@@ -313,9 +317,9 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
                     context: context,
                     periodTitle: periodTitle,
                     transactions: periodTxs,
-                    totalIncome: summary.totalIncome,
-                    totalExpense: summary.totalExpense,
-                    balance: summary.balance,
+                    totalIncome: periodRealSummary.totalIncome,
+                    totalExpense: periodRealSummary.totalExpense,
+                    balance: allTimeSummary.balance,
                     categoryTotals: categoryTotalsMap,
                   );
                 },
@@ -422,11 +426,16 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
             const SizedBox(height: 18),
             transactionsAsync.when(
               data: (allTransactions) {
+                final allTimeSummary = FinancialSummary.calculate(allTransactions);
+
                 final periodTxs = allTransactions
                     .where((tx) => currentRange.contains(tx.date))
                     .toList();
 
-                final summary = FinancialSummary.calculate(periodTxs);
+                final periodRealSummary = FinancialSummary.calculate(
+                  periodTxs,
+                  excludeInternalTransfers: true,
+                );
 
                 if (periodTxs.isEmpty) {
                   return Container(
@@ -499,7 +508,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  CurrencyUtils.formatRupiah(summary.totalIncome),
+                                  CurrencyUtils.formatRupiah(periodRealSummary.totalIncome),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.income,
@@ -532,7 +541,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  CurrencyUtils.formatRupiah(summary.totalExpense),
+                                  CurrencyUtils.formatRupiah(periodRealSummary.totalExpense),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.expense,
@@ -560,15 +569,15 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'Saldo',
+                                  'Saldo Tersedia',
                                   style: TextStyle(fontSize: 11, color: AppColors.ink, fontWeight: FontWeight.w500),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  CurrencyUtils.formatRupiah(summary.balance),
+                                  CurrencyUtils.formatRupiah(allTimeSummary.balance),
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: summary.balance >= 0
+                                    color: allTimeSummary.balance >= 0
                                         ? AppColors.sageDark
                                         : AppColors.expense,
                                     fontSize: 13,
@@ -583,8 +592,8 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
                       ],
                     ),
                     const SizedBox(height: 24),
-                    // Grafik Donut Pengeluaran per Kategori
-                    if (summary.totalExpense > 0) ...[
+                    // Grafik Donut Pengeluaran per Kategori (Mengecualikan Transfer Internal)
+                    if (periodRealSummary.totalExpense > 0) ...[
                       const Text(
                         'Pengeluaran per Kategori',
                         style: TextStyle(
@@ -612,9 +621,9 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
                                   sectionsSpace: 2,
                                   centerSpaceRadius: 36,
                                   sections: List.generate(
-                                    summary.categorySummaries.length,
+                                    periodRealSummary.categorySummaries.length,
                                     (i) {
-                                      final cat = summary.categorySummaries[i];
+                                      final cat = periodRealSummary.categorySummaries[i];
                                       final color = _chartColors[i % _chartColors.length];
                                       return PieChartSectionData(
                                         color: color,
@@ -634,8 +643,8 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
                             ),
                             const SizedBox(height: 16),
                             // Rincian Daftar Kategori
-                            ...List.generate(summary.categorySummaries.length, (i) {
-                              final cat = summary.categorySummaries[i];
+                            ...List.generate(periodRealSummary.categorySummaries.length, (i) {
+                              final cat = periodRealSummary.categorySummaries[i];
                               final color = _chartColors[i % _chartColors.length];
 
                               return Padding(

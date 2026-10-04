@@ -45,7 +45,10 @@ class FinancialSummary {
     required this.userBalances,
   });
 
-  static FinancialSummary calculate(List<Transaction> transactions) {
+  static FinancialSummary calculate(
+    List<Transaction> transactions, {
+    bool excludeInternalTransfers = false,
+  }) {
     int income = 0;
     int expense = 0;
     final Map<String, int> expensePerCategory = {};
@@ -57,6 +60,15 @@ class FinancialSummary {
     final Map<String, String> userNames = {};
 
     for (final tx in transactions) {
+      // Jika excludeInternalTransfers aktif, kecualikan transaksi bertipe Transfer Internal dari Cashflow & Grafik
+      final isTransferInternal = tx.categoryId == 'cat_transfer' ||
+          tx.categoryName == 'Transfer Internal' ||
+          tx.title.startsWith('Transfer ');
+
+      if (excludeInternalTransfers && isTransferInternal) {
+        continue;
+      }
+
       final uid = tx.createdBy;
       userNames[uid] = tx.createdByName;
 
