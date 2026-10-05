@@ -147,11 +147,11 @@ class PdfReportExporter {
             ),
             pw.SizedBox(height: 8),
             pw.TableHelper.fromTextArray(
-              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 10),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9),
               headerDecoration: pw.BoxDecoration(color: primaryColor),
               cellHeight: 22,
-              cellStyle: pw.TextStyle(fontSize: 9, color: textColor),
-              headers: ['Tanggal', 'Nama Transaksi', 'Jenis', 'Kategori', 'Catatan', 'Pencatat', 'Nominal'],
+              cellStyle: pw.TextStyle(fontSize: 8, color: textColor),
+              headers: ['Tanggal', 'Nama Transaksi', 'Jenis', 'Kategori', 'Grup / Tempat', 'Catatan', 'Pencatat', 'Nominal'],
               data: transactions.map((tx) {
                 final isIncome = tx.type == TransactionType.income;
                 final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(tx.date);
@@ -163,6 +163,7 @@ class PdfReportExporter {
                   tx.title,
                   typeStr,
                   tx.categoryName,
+                  tx.groupName ?? '-',
                   tx.note ?? '-',
                   tx.createdByName,
                   amountStr,

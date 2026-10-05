@@ -12,6 +12,8 @@ import '../../../household/domain/household_model.dart';
 import '../../../household/presentation/widgets/transfer_modal.dart';
 import '../../../transactions/domain/transaction_model.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
+import '../../../transactions/presentation/widgets/group_transaction_card.dart';
+import '../../../transactions/presentation/widgets/transaction_detail_sheet.dart';
 import '../../../transactions/presentation/widgets/transaction_form_modal.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -395,61 +397,91 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> with Automati
                     ),
                   )
                 else
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: recentTxs.length,
-                    itemBuilder: (context, index) {
-                      final tx = recentTxs[index];
-                      final isIncome = tx.type == TransactionType.income;
-                      final color = isIncome ? AppColors.income : AppColors.expense;
-                      final prefix = isIncome ? '+ ' : '- ';
-                      final icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+                  Builder(
+                    builder: (context) {
+                      final List<Widget> recentWidgets = [];
+                      final Set<String> processedGroupIds = {};
+                      final authService = AuthService();
+                      final currentUid = authService.currentUser?.uid;
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: AppColors.sand,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppColors.sageDark.withValues(alpha: 0.15),
-                            width: 1,
-                          ),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          leading: CircleAvatar(
-                            backgroundColor: color.withValues(alpha: 0.12),
-                            child: Icon(icon, color: color, size: 20),
-                          ),
-                          title: Text(
-                            tx.title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.ink,
+                      for (final tx in recentTxs) {
+                        if (tx.groupId != null && tx.groupId!.isNotEmpty) {
+                          if (!processedGroupIds.contains(tx.groupId)) {
+                            processedGroupIds.add(tx.groupId!);
+                            final groupItems = allTransactions.where((t) => t.groupId == tx.groupId).toList();
+                            final totalGroupAmount = groupItems.fold(0, (acc, item) => acc + item.amount);
+
+                            recentWidgets.add(
+                              GroupTransactionCard(
+                                groupName: tx.groupName ?? 'Grup Transaksi',
+                                items: groupItems,
+                                totalAmount: totalGroupAmount,
+                                currentUid: currentUid,
+                              ),
+                            );
+                          }
+                        } else {
+                          final isIncome = tx.type == TransactionType.income;
+                          final color = isIncome ? AppColors.income : AppColors.expense;
+                          final prefix = isIncome ? '+ ' : '- ';
+                          final icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+
+                          recentWidgets.add(
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              decoration: BoxDecoration(
+                                color: AppColors.sand,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppColors.sageDark.withValues(alpha: 0.15),
+                                  width: 1,
+                                ),
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                leading: CircleAvatar(
+                                  backgroundColor: color.withValues(alpha: 0.12),
+                                  child: Icon(icon, color: color, size: 20),
+                                ),
+                                title: Text(
+                                  tx.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.ink,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${tx.categoryName} • ${DateUtilsId.formatDateShort(tx.date)}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.ink.withValues(alpha: 0.6),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                trailing: Text(
+                                  '$prefix${CurrencyUtils.formatRupiah(tx.amount)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: color,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                onTap: () {
+                                  if (tx.isTransfer) {
+                                    TransactionDetailSheet.show(context, transaction: tx);
+                                    return;
+                                  }
+                                  TransactionFormModal.show(context, transaction: tx);
+                                },
+                              ),
                             ),
-                          ),
-                          subtitle: Text(
-                            '${tx.categoryName} • ${DateUtilsId.formatDateShort(tx.date)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.ink.withValues(alpha: 0.6),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          trailing: Text(
-                            '$prefix${CurrencyUtils.formatRupiah(tx.amount)}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: color,
-                              fontSize: 14,
-                            ),
-                          ),
-                          onTap: () {
-                            TransactionFormModal.show(context, transaction: tx);
-                          },
-                        ),
+                          );
+                        }
+                      }
+
+                      return Column(
+                        children: recentWidgets,
                       );
                     },
                   ),

@@ -7,13 +7,29 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/date_range_helper.dart';
 import '../../../../core/utils/financial_calculator.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../auth/data/auth_service.dart';
 import '../../../export/data/excel_exporter.dart';
 import '../../../export/data/pdf_exporter.dart';
 import '../../../transactions/domain/transaction_model.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
+import '../../../transactions/presentation/widgets/group_transaction_card.dart';
+import '../../../transactions/presentation/widgets/transaction_detail_sheet.dart';
 import '../../../transactions/presentation/widgets/transaction_form_modal.dart';
 
 enum ReportPeriodType { daily, weekly, monthly }
+enum ExpenseReportView { category, group }
+
+class GroupExpenseSummary {
+  final String groupName;
+  final int totalAmount;
+  final double percentage;
+
+  GroupExpenseSummary({
+    required this.groupName,
+    required this.totalAmount,
+    required this.percentage,
+  });
+}
 
 class ReportScreen extends ConsumerStatefulWidget {
   const ReportScreen({super.key});
@@ -24,6 +40,7 @@ class ReportScreen extends ConsumerStatefulWidget {
 
 class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepAliveClientMixin {
   ReportPeriodType _selectedPeriod = ReportPeriodType.monthly;
+  ExpenseReportView _expenseReportView = ExpenseReportView.category;
   DateTime _selectedDate = DateTime.now();
 
   @override
@@ -40,6 +57,40 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
     Colors.indigo,
     Colors.brown,
   ];
+
+  List<GroupExpenseSummary> _calculateGroupSummaries(List<Transaction> periodTxs) {
+    final Map<String, int> groupTotals = {};
+    int totalGroupExpense = 0;
+
+    for (final tx in periodTxs) {
+      final isTransferInternal = tx.categoryId == 'cat_transfer' ||
+          tx.categoryName == 'Transfer Internal' ||
+          tx.title.startsWith('Transfer ');
+      if (isTransferInternal) continue;
+
+      if (tx.type == TransactionType.expense) {
+        final name = (tx.groupName != null && tx.groupName!.isNotEmpty)
+            ? tx.groupName!
+            : 'Tanpa Grup';
+        groupTotals[name] = (groupTotals[name] ?? 0) + tx.amount;
+        totalGroupExpense += tx.amount;
+      }
+    }
+
+    final List<GroupExpenseSummary> result = [];
+    if (totalGroupExpense > 0) {
+      groupTotals.forEach((name, amount) {
+        final percentage = (amount / totalGroupExpense) * 100;
+        result.add(GroupExpenseSummary(
+          groupName: name,
+          totalAmount: amount,
+          percentage: percentage,
+        ));
+      });
+      result.sort((a, b) => b.totalAmount.compareTo(a.totalAmount));
+    }
+    return result;
+  }
 
   DateRange _getCurrentRange() {
     switch (_selectedPeriod) {
@@ -592,99 +643,224 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
                       ],
                     ),
                     const SizedBox(height: 24),
-                    // Grafik Donut Pengeluaran per Kategori (Mengecualikan Transfer Internal)
+                    // Grafik Donut Pengeluaran per Kategori / Grup (Mengecualikan Transfer Internal)
                     if (periodRealSummary.totalExpense > 0) ...[
-                      const Text(
-                        'Pengeluaran per Kategori',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.ink,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Pengeluaran',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          SegmentedButton<ExpenseReportView>(
+                            style: SegmentedButton.styleFrom(
+                              selectedBackgroundColor: AppColors.sageDark,
+                              selectedForegroundColor: AppColors.cream,
+                              backgroundColor: AppColors.sand,
+                              foregroundColor: AppColors.ink,
+                              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                            ),
+                            segments: const [
+                              ButtonSegment(
+                                value: ExpenseReportView.category,
+                                label: Text('Per Kategori'),
+                              ),
+                              ButtonSegment(
+                                value: ExpenseReportView.group,
+                                label: Text('Per Grup'),
+                              ),
+                            ],
+                            selected: {_expenseReportView},
+                            onSelectionChanged: (val) {
+                              setState(() {
+                                _expenseReportView = val.first;
+                              });
+                            },
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.sand,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppColors.sageDark.withValues(alpha: 0.15),
+                      if (_expenseReportView == ExpenseReportView.category) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.sand,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.sageDark.withValues(alpha: 0.15),
+                            ),
                           ),
-                        ),
-                        child: Column(
-                          children: [
-                            SizedBox(
-                              height: 180,
-                              child: PieChart(
-                                PieChartData(
-                                  sectionsSpace: 2,
-                                  centerSpaceRadius: 36,
-                                  sections: List.generate(
-                                    periodRealSummary.categorySummaries.length,
-                                    (i) {
-                                      final cat = periodRealSummary.categorySummaries[i];
-                                      final color = _chartColors[i % _chartColors.length];
-                                      return PieChartSectionData(
-                                        color: color,
-                                        value: cat.totalAmount.toDouble(),
-                                        title: '${cat.percentage.toStringAsFixed(0)}%',
-                                        radius: 46,
-                                        titleStyle: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      );
-                                    },
+                          child: Column(
+                            children: [
+                              SizedBox(
+                                height: 180,
+                                child: PieChart(
+                                  PieChartData(
+                                    sectionsSpace: 2,
+                                    centerSpaceRadius: 36,
+                                    sections: List.generate(
+                                      periodRealSummary.categorySummaries.length,
+                                      (i) {
+                                        final cat = periodRealSummary.categorySummaries[i];
+                                        final color = _chartColors[i % _chartColors.length];
+                                        return PieChartSectionData(
+                                          color: color,
+                                          value: cat.totalAmount.toDouble(),
+                                          title: '${cat.percentage.toStringAsFixed(0)}%',
+                                          radius: 46,
+                                          titleStyle: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            // Rincian Daftar Kategori
-                            ...List.generate(periodRealSummary.categorySummaries.length, (i) {
-                              final cat = periodRealSummary.categorySummaries[i];
-                              final color = _chartColors[i % _chartColors.length];
+                              const SizedBox(height: 16),
+                              // Rincian Daftar Kategori
+                              ...List.generate(periodRealSummary.categorySummaries.length, (i) {
+                                final cat = periodRealSummary.categorySummaries[i];
+                                final color = _chartColors[i % _chartColors.length];
 
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: color,
-                                        shape: BoxShape.circle,
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 12,
+                                        height: 12,
+                                        decoration: BoxDecoration(
+                                          color: color,
+                                          shape: BoxShape.circle,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        cat.categoryName,
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          cat.categoryName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.ink,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${cat.percentage.toStringAsFixed(1)}% (${CurrencyUtils.formatRupiah(cat.totalAmount)})',
                                         style: const TextStyle(
-                                          fontWeight: FontWeight.w500,
+                                          fontWeight: FontWeight.bold,
                                           color: AppColors.ink,
                                           fontSize: 13,
                                         ),
                                       ),
-                                    ),
-                                    Text(
-                                      '${cat.percentage.toStringAsFixed(1)}% (${CurrencyUtils.formatRupiah(cat.totalAmount)})',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.ink,
-                                        fontSize: 13,
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      ] else ...[
+                        // Tampilan Per Grup
+                        Builder(
+                          builder: (context) {
+                            final groupSummaries = _calculateGroupSummaries(periodTxs);
+                            if (groupSummaries.isEmpty) {
+                              return const Center(child: Text('Belum ada data grup.'));
+                            }
+
+                            return Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.sand,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppColors.sageDark.withValues(alpha: 0.15),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  SizedBox(
+                                    height: 180,
+                                    child: PieChart(
+                                      PieChartData(
+                                        sectionsSpace: 2,
+                                        centerSpaceRadius: 36,
+                                        sections: List.generate(
+                                          groupSummaries.length,
+                                          (i) {
+                                            final grp = groupSummaries[i];
+                                            final color = _chartColors[i % _chartColors.length];
+                                            return PieChartSectionData(
+                                              color: color,
+                                              value: grp.totalAmount.toDouble(),
+                                              title: '${grp.percentage.toStringAsFixed(0)}%',
+                                              radius: 46,
+                                              titleStyle: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                            );
+                                          },
+                                        ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  // Rincian Daftar Grup
+                                  ...List.generate(groupSummaries.length, (i) {
+                                    final grp = groupSummaries[i];
+                                    final color = _chartColors[i % _chartColors.length];
+
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 4),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 12,
+                                            height: 12,
+                                            decoration: BoxDecoration(
+                                              color: color,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              grp.groupName,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                                color: AppColors.ink,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${grp.percentage.toStringAsFixed(1)}% (${CurrencyUtils.formatRupiah(grp.totalAmount)})',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.ink,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            );
+                          },
                         ),
-                      ),
+                      ],
                       const SizedBox(height: 24),
                     ],
                     // Daftar Transaksi Periode Ini
@@ -697,61 +873,91 @@ class _ReportScreenState extends ConsumerState<ReportScreen> with AutomaticKeepA
                       ),
                     ),
                     const SizedBox(height: 10),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: periodTxs.length,
-                      itemBuilder: (context, index) {
-                        final tx = periodTxs[index];
-                        final isIncome = tx.type == TransactionType.income;
-                        final color = isIncome ? AppColors.income : AppColors.expense;
-                        final prefix = isIncome ? '+ ' : '- ';
-                        final icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+                    Builder(
+                      builder: (context) {
+                        final List<Widget> periodWidgets = [];
+                        final Set<String> processedGroupIds = {};
+                        final authService = AuthService();
+                        final currentUid = authService.currentUser?.uid;
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          decoration: BoxDecoration(
-                            color: AppColors.sand,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppColors.sageDark.withValues(alpha: 0.15),
-                              width: 1,
-                            ),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            leading: CircleAvatar(
-                              backgroundColor: color.withValues(alpha: 0.12),
-                              child: Icon(icon, color: color, size: 20),
-                            ),
-                            title: Text(
-                              tx.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.ink,
+                        for (final tx in periodTxs) {
+                          if (tx.groupId != null && tx.groupId!.isNotEmpty) {
+                            if (!processedGroupIds.contains(tx.groupId)) {
+                              processedGroupIds.add(tx.groupId!);
+                              final groupItems = periodTxs.where((t) => t.groupId == tx.groupId).toList();
+                              final totalGroupAmount = groupItems.fold(0, (acc, item) => acc + item.amount);
+
+                              periodWidgets.add(
+                                GroupTransactionCard(
+                                  groupName: tx.groupName ?? 'Grup Transaksi',
+                                  items: groupItems,
+                                  totalAmount: totalGroupAmount,
+                                  currentUid: currentUid,
+                                ),
+                              );
+                            }
+                          } else {
+                            final isIncome = tx.type == TransactionType.income;
+                            final color = isIncome ? AppColors.income : AppColors.expense;
+                            final prefix = isIncome ? '+ ' : '- ';
+                            final icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+
+                            periodWidgets.add(
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                decoration: BoxDecoration(
+                                  color: AppColors.sand,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.sageDark.withValues(alpha: 0.15),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                  leading: CircleAvatar(
+                                    backgroundColor: color.withValues(alpha: 0.12),
+                                    child: Icon(icon, color: color, size: 20),
+                                  ),
+                                  title: Text(
+                                    tx.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.ink,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${tx.categoryName} • ${DateUtilsId.formatDateShort(tx.date)} • ${tx.createdByName}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.ink.withValues(alpha: 0.6),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  trailing: Text(
+                                    '$prefix${CurrencyUtils.formatRupiah(tx.amount)}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: color,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    if (tx.isTransfer) {
+                                      TransactionDetailSheet.show(context, transaction: tx);
+                                      return;
+                                    }
+                                    TransactionFormModal.show(context, transaction: tx);
+                                  },
+                                ),
                               ),
-                            ),
-                            subtitle: Text(
-                              '${tx.categoryName} • ${DateUtilsId.formatDateShort(tx.date)} • ${tx.createdByName}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.ink.withValues(alpha: 0.6),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: Text(
-                              '$prefix${CurrencyUtils.formatRupiah(tx.amount)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: color,
-                                fontSize: 14,
-                              ),
-                            ),
-                            onTap: () {
-                              TransactionFormModal.show(context, transaction: tx);
-                            },
-                          ),
+                            );
+                          }
+                        }
+
+                        return Column(
+                          children: periodWidgets,
                         );
                       },
                     ),

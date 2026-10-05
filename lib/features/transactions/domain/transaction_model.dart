@@ -8,6 +8,8 @@ class Transaction {
   final String categoryId;
   final String categoryName;
   final String? note;
+  final String? groupId;
+  final String? groupName;
   final DateTime date;
   final String createdBy;
   final String createdByName;
@@ -22,12 +24,20 @@ class Transaction {
     required this.categoryId,
     required this.categoryName,
     this.note,
+    this.groupId,
+    this.groupName,
     required this.date,
     required this.createdBy,
     required this.createdByName,
     required this.createdAt,
     required this.updatedAt,
   });
+
+  // Mendeteksi transaksi Transfer Internal (tidak dapat diedit)
+  bool get isTransfer =>
+      categoryId == 'cat_transfer' ||
+      categoryName == 'Transfer Internal' ||
+      title.startsWith('Transfer ');
 
   Map<String, dynamic> toMap() {
     return {
@@ -38,6 +48,8 @@ class Transaction {
       'categoryId': categoryId,
       'categoryName': categoryName,
       'note': note,
+      'groupId': groupId,
+      'groupName': groupName,
       'date': date.toIso8601String(),
       'createdBy': createdBy,
       'createdByName': createdByName,
@@ -58,6 +70,8 @@ class Transaction {
       categoryId: map['categoryId'] as String,
       categoryName: map['categoryName'] as String,
       note: map['note'] as String?,
+      groupId: map['groupId'] as String?,
+      groupName: map['groupName'] as String?,
       date: DateTime.parse(map['date'] as String),
       createdBy: map['createdBy'] as String,
       createdByName: map['createdByName'] as String,

@@ -556,7 +556,7 @@ class ActiveHouseholdCard extends StatelessWidget {
 
                 const SizedBox(height: 18),
 
-                // Chip Kode Undangan Pasangan
+                // Chip Kode Undangan Grup
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -684,7 +684,7 @@ class ActiveHouseholdCard extends StatelessWidget {
                         household: household,
                         currentUid: currentUid,
                       ),
-                    if (household.memberIds.length < 6) const WaitingPartnerTile(),
+                    if (household.memberIds.length < 6) const WaitingMemberTile(),
                   ],
                 ),
 
@@ -954,8 +954,8 @@ class MemberProfileTile extends StatelessWidget {
   }
 }
 
-class WaitingPartnerTile extends StatelessWidget {
-  const WaitingPartnerTile({super.key});
+class WaitingMemberTile extends StatelessWidget {
+  const WaitingMemberTile({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -976,7 +976,7 @@ class WaitingPartnerTile extends StatelessWidget {
             radius: 18,
             backgroundColor: AppColors.terracotta.withValues(alpha: 0.15),
             child: const Icon(
-              Icons.person_add_rounded,
+              Icons.person_add_alt_1_rounded,
               size: 18,
               color: AppColors.terracotta,
             ),
@@ -987,7 +987,7 @@ class WaitingPartnerTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Menunggu Pasangan',
+                  'Tambah Anggota Baru',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -995,7 +995,7 @@ class WaitingPartnerTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Bagikan kode undangan untuk bergabung',
+                  'Undang keluarga atau teman dengan kode di atas',
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.ink.withValues(alpha: 0.6),

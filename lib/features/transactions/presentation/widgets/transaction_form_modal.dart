@@ -30,14 +30,41 @@ class TransactionFormModal extends ConsumerStatefulWidget {
   ConsumerState<TransactionFormModal> createState() => _TransactionFormModalState();
 }
 
+class _GroupExpenseItem {
+  String? id; // ID asli transaksi jika item sudah tersimpan (untuk update), null jika item baru
+  final TextEditingController titleController;
+  final TextEditingController amountController;
+  final TextEditingController noteController;
+  Category? category;
+
+  _GroupExpenseItem({
+    this.id,
+    String title = '',
+    String amount = '',
+    String note = '',
+    this.category,
+  })  : titleController = TextEditingController(text: title),
+        amountController = TextEditingController(text: amount),
+        noteController = TextEditingController(text: note);
+
+  void dispose() {
+    titleController.dispose();
+    amountController.dispose();
+    noteController.dispose();
+  }
+}
+
 class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
   final _formKey = GlobalKey<FormState>();
   late TransactionType _selectedType;
   late TextEditingController _titleController;
   late TextEditingController _amountController;
   late TextEditingController _noteController;
+  late TextEditingController _groupNameController;
   Category? _selectedCategory;
   late DateTime _selectedDate;
+  bool _isGroupActive = false;
+  final List<_GroupExpenseItem> _groupItems = [];
   bool _isSubmitting = false;
 
   @override
@@ -50,7 +77,64 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
       text: tx != null ? CurrencyUtils.formatRupiah(tx.amount).replaceAll('Rp ', '') : '',
     );
     _noteController = TextEditingController(text: tx?.note ?? '');
+    _groupNameController = TextEditingController(text: tx?.groupName ?? '');
     _selectedDate = tx?.date ?? DateTime.now();
+
+    if (tx?.groupId != null && tx?.groupId!.isNotEmpty == true) {
+      _isGroupActive = true;
+    }
+    if (_groupItems.isEmpty) {
+      if (_isGroupActive) {
+        // Muat seluruh item saudara secara async agar kategori sudah ter-load
+        Future.microtask(() => _loadGroupSiblings(tx!.groupId!));
+      } else {
+        _groupItems.add(_GroupExpenseItem(
+          title: tx?.title ?? '',
+          amount: tx != null ? CurrencyUtils.formatRupiah(tx.amount).replaceAll('Rp ', '') : '',
+          note: tx?.note ?? '',
+        ));
+      }
+    }
+  }
+
+  Future<void> _loadGroupSiblings(String groupId) async {
+    // Pastikan kategori sudah ter-load sebelum mencocokkan item
+    final categoriesAsync = ref.read(categoriesProvider);
+    if (!categoriesAsync.hasValue) {
+      try {
+        await ref.read(categoriesProvider.notifier).loadCategories();
+      } catch (_) {
+        // kategori gagal dimuat; lanjut tanpa kategori
+      }
+    }
+    final categories = ref.read(categoriesProvider).value ?? <Category>[];
+
+    final allTxs = ref.read(transactionsProvider).value ?? <Transaction>[];
+    final siblingItems = allTxs
+        .where((t) => t.groupId == groupId)
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+    if (!mounted) return;
+
+    setState(() {
+      for (final sibling in siblingItems) {
+        Category? siblingCategory;
+        for (final c in categories) {
+          if (c.id == sibling.categoryId) {
+            siblingCategory = c;
+            break;
+          }
+        }
+        _groupItems.add(_GroupExpenseItem(
+          id: sibling.id,
+          title: sibling.title,
+          amount: CurrencyUtils.formatRupiah(sibling.amount).replaceAll('Rp ', ''),
+          note: sibling.note ?? '',
+          category: siblingCategory,
+        ));
+      }
+    });
   }
 
   @override
@@ -58,16 +142,32 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
     _titleController.dispose();
     _amountController.dispose();
     _noteController.dispose();
+    _groupNameController.dispose();
+    for (final item in _groupItems) {
+      item.dispose();
+    }
     super.dispose();
   }
 
   void _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih kategori transaksi')),
-      );
-      return;
+
+    if (_isGroupActive && _selectedType == TransactionType.expense) {
+      for (final item in _groupItems) {
+        if (item.category == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pilih kategori untuk setiap item grup')),
+          );
+          return;
+        }
+      }
+    } else {
+      if (_selectedCategory == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pilih kategori transaksi')),
+        );
+        return;
+      }
     }
 
     setState(() {
@@ -75,35 +175,77 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
     });
 
     try {
-      final amount = CurrencyInputFormatter.parseAmount(_amountController.text);
-      final isEditing = widget.transaction != null;
-
       final authService = AuthService();
       final currentUser = authService.currentUser;
       final userProfile = currentUser != null ? await authService.getUserProfile(currentUser.uid) : null;
       final currentUid = currentUser?.uid ?? 'user_anonymous';
       final currentName = userProfile?.displayName ?? currentUser?.displayName ?? currentUser?.email?.split('@').first ?? 'Pengguna';
 
-      final newTx = Transaction(
-        id: widget.transaction?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        title: _titleController.text.trim(),
-        type: _selectedType,
-        amount: amount,
-        categoryId: _selectedCategory!.id,
-        categoryName: _selectedCategory!.name,
-        note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
-        date: _selectedDate,
-        createdBy: widget.transaction?.createdBy ?? currentUid,
-        createdByName: widget.transaction?.createdByName ?? currentName,
-        createdAt: widget.transaction?.createdAt ?? DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
       final notifier = ref.read(transactionsProvider.notifier);
-      if (isEditing) {
-        await notifier.updateTransaction(newTx);
+
+      if (_isGroupActive && _selectedType == TransactionType.expense) {
+        // Simpan sebagai Grup Transaksi
+        final groupId = widget.transaction?.groupId ?? 'grp_${DateTime.now().millisecondsSinceEpoch}';
+        final groupName = _groupNameController.text.trim();
+
+        for (int i = 0; i < _groupItems.length; i++) {
+          final item = _groupItems[i];
+          final itemAmount = CurrencyInputFormatter.parseAmount(item.amountController.text);
+
+          // Gunakan id asli jika item sudah tersimpan, jika tidak generate id baru
+          final itemId = item.id ?? 'tx_grp_${DateTime.now().millisecondsSinceEpoch}_$i';
+
+          final itemTx = Transaction(
+            id: itemId,
+            title: item.titleController.text.trim(),
+            type: TransactionType.expense,
+            amount: itemAmount,
+            categoryId: item.category!.id,
+            categoryName: item.category!.name,
+            note: item.noteController.text.trim().isEmpty ? null : item.noteController.text.trim(),
+            groupId: groupId,
+            groupName: groupName,
+            date: _selectedDate,
+            createdBy: currentUid,
+            createdByName: currentName,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+
+          // Update item yang sudah tersimpan, atau add item baru
+          if (item.id != null) {
+            await notifier.updateTransaction(itemTx);
+          } else {
+            await notifier.addTransaction(itemTx);
+          }
+        }
       } else {
-        await notifier.addTransaction(newTx);
+        // Simpan sebagai Transaksi Tunggal
+        final amount = CurrencyInputFormatter.parseAmount(_amountController.text);
+        final isEditing = widget.transaction != null;
+
+        final newTx = Transaction(
+          id: widget.transaction?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+          title: _titleController.text.trim(),
+          type: _selectedType,
+          amount: amount,
+          categoryId: _selectedCategory!.id,
+          categoryName: _selectedCategory!.name,
+          note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+          groupId: null,
+          groupName: null,
+          date: _selectedDate,
+          createdBy: widget.transaction?.createdBy ?? currentUid,
+          createdByName: widget.transaction?.createdByName ?? currentName,
+          createdAt: widget.transaction?.createdAt ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        if (isEditing) {
+          await notifier.updateTransaction(newTx);
+        } else {
+          await notifier.addTransaction(newTx);
+        }
       }
 
       if (mounted) {
@@ -163,234 +305,556 @@ class _TransactionFormModalState extends ConsumerState<TransactionFormModal> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              SegmentedButton<TransactionType>(
-                style: SegmentedButton.styleFrom(
-                  selectedBackgroundColor: _selectedType == TransactionType.expense ? AppColors.expense : AppColors.income,
-                  selectedForegroundColor: AppColors.cream,
-                  backgroundColor: AppColors.sand,
-                  foregroundColor: AppColors.ink,
-                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                  side: BorderSide(
-                    color: AppColors.sageDark.withValues(alpha: 0.2),
-                  ),
-                ),
-                segments: const [
-                  ButtonSegment(
-                    value: TransactionType.expense,
-                    label: Text('Pengeluaran'),
-                    icon: Icon(Icons.arrow_downward_rounded),
-                  ),
-                  ButtonSegment(
-                    value: TransactionType.income,
-                    label: Text('Pemasukan'),
-                    icon: Icon(Icons.arrow_upward_rounded),
-                  ),
-                ],
-                selected: {_selectedType},
-                onSelectionChanged: (Set<TransactionType> newSelection) {
-                  setState(() {
-                    _selectedType = newSelection.first;
-                    _selectedCategory = null;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _titleController,
-                style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold, fontSize: 16),
-                decoration: InputDecoration(
-                  labelText: 'Nama Transaksi',
-                  hintText: 'Contoh: Beli Kue, Gaji Bulanan',
-                  labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
-                  filled: true,
-                  fillColor: AppColors.sand,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
-                  ),
-                ),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Nama transaksi wajib diisi' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _amountController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [CurrencyInputFormatter()],
-                style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold, fontSize: 16),
-                decoration: InputDecoration(
-                  labelText: 'Nominal',
-                  labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
-                  prefixText: 'Rp ',
-                  prefixStyle: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
-                  filled: true,
-                  fillColor: AppColors.sand,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
-                  ),
-                ),
-                validator: (value) {
-                  final amount = CurrencyInputFormatter.parseAmount(value ?? '');
-                  if (amount <= 0) {
-                    return 'Masukkan nominal yang valid (> 0)';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              categoriesAsync.when(
-                data: (categories) {
-                  final filteredCategories = categories.where((c) {
-                    final targetType = _selectedType == TransactionType.income
-                        ? CategoryType.income
-                        : CategoryType.expense;
-                    return c.type == targetType;
-                  }).toList();
-
-                  if (_selectedCategory == null && widget.transaction != null) {
-                    try {
-                      _selectedCategory = filteredCategories.firstWhere(
-                        (c) => c.id == widget.transaction!.categoryId,
-                      );
-                    } catch (_) {}
-                  }
-
-                  return DropdownButtonFormField<Category>(
-                    initialValue: _selectedCategory,
-                    dropdownColor: AppColors.sand,
-                    icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.sageDark),
-                    style: const TextStyle(color: AppColors.ink, fontSize: 15, fontWeight: FontWeight.bold),
-                    decoration: InputDecoration(
-                      labelText: 'Kategori',
-                      labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
-                      filled: true,
-                      fillColor: AppColors.sand,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
-                      ),
-                    ),
-                    items: filteredCategories.map((c) {
-                      return DropdownMenuItem(
-                        value: c,
-                        child: Text(c.name, style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedCategory = val;
-                      });
-                    },
-                    validator: (val) => val == null ? 'Pilih kategori' : null,
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.sageDark)),
-                error: (err, st) => Text('Gagal memuat kategori: $err', style: const TextStyle(color: AppColors.ink)),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.sand,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.sageDark.withValues(alpha: 0.15),
-                  ),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                  title: const Text(
-                    'Tanggal Transaksi',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.sageDark,
-                      fontWeight: FontWeight.bold,
+              // Tab Pengeluaran/Pemasukan hanya tampil saat BUKAN mode grup (grup hanya untuk pengeluaran)
+              if (!_isGroupActive)
+                SegmentedButton<TransactionType>(
+                  style: SegmentedButton.styleFrom(
+                    selectedBackgroundColor: _selectedType == TransactionType.expense ? AppColors.expense : AppColors.income,
+                    selectedForegroundColor: AppColors.cream,
+                    backgroundColor: AppColors.sand,
+                    foregroundColor: AppColors.ink,
+                    textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    side: BorderSide(
+                      color: AppColors.sageDark.withValues(alpha: 0.2),
                     ),
                   ),
-                  subtitle: Text(
-                    DateUtilsId.formatDateFull(_selectedDate),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.ink,
+                  segments: const [
+                    ButtonSegment(
+                      value: TransactionType.expense,
+                      label: Text('Pengeluaran'),
+                      icon: Icon(Icons.arrow_downward_rounded),
                     ),
-                  ),
-                  trailing: const Icon(Icons.calendar_today_rounded, color: AppColors.sageDark, size: 20),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2100),
-                      builder: (context, child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: Theme.of(context).colorScheme.copyWith(
-                                  primary: AppColors.sageDark,
-                                  onPrimary: AppColors.cream,
-                                  surface: AppColors.cream,
-                                  onSurface: AppColors.ink,
-                                ),
-                          ),
-                          child: child!,
-                        );
-                      },
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        _selectedDate = picked;
-                      });
-                    }
+                    ButtonSegment(
+                      value: TransactionType.income,
+                      label: Text('Pemasukan'),
+                      icon: Icon(Icons.arrow_upward_rounded),
+                    ),
+                  ],
+                  selected: {_selectedType},
+                  onSelectionChanged: (Set<TransactionType> newSelection) {
+                    setState(() {
+                      _selectedType = newSelection.first;
+                      _selectedCategory = null;
+                      if (_selectedType == TransactionType.income) {
+                        _isGroupActive = false;
+                      }
+                    });
                   },
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _noteController,
-                style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
-                decoration: InputDecoration(
-                  labelText: 'Catatan (opsional)',
-                  labelStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.7), fontWeight: FontWeight.w500),
-                  filled: true,
-                  fillColor: AppColors.sand,
-                  border: OutlineInputBorder(
+              if (!_isGroupActive) const SizedBox(height: 16),
+
+              // Switch Toggle Kelompokkan dalam Grup (hanya untuk Pengeluaran BARU, bukan edit transaksi yang sudah ada)
+              if (_selectedType == TransactionType.expense && widget.transaction == null) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.sand,
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                    border: Border.all(
+                      color: AppColors.sageDark.withValues(alpha: 0.15),
+                    ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                  child: SwitchListTile.adaptive(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    activeTrackColor: AppColors.sageDark,
+                    title: const Text(
+                      'Kelompokkan dalam Grup (Struk Belanja)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Catat beberapa item pengeluaran sekaligus dalam 1 tempat belanja (misal: Indomaret)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.ink.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    value: _isGroupActive,
+                    onChanged: (val) {
+                      setState(() {
+                        _isGroupActive = val;
+                      });
+                    },
                   ),
                 ),
-              ),
+              ],
+
+              if (_isGroupActive && _selectedType == TransactionType.expense) ...[
+                // Form Input Grup Transaksi (Tempat Belanja + Item-Item Anak)
+                TextFormField(
+                  controller: _groupNameController,
+                  style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold, fontSize: 16),
+                  decoration: InputDecoration(
+                    labelText: 'Nama Grup / Tempat Belanja',
+                    hintText: 'Contoh: Indomaret, Alfamart, Pasar',
+                    labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                    filled: true,
+                    fillColor: AppColors.sand,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                    ),
+                  ),
+                  validator: (val) =>
+                      val == null || val.trim().isEmpty ? 'Nama grup/tempat belanja wajib diisi' : null,
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.sand,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.sageDark.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                    title: const Text(
+                      'Tanggal Transaksi Grup',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.sageDark,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(
+                      DateUtilsId.formatDateFull(_selectedDate),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    trailing: const Icon(Icons.calendar_today_rounded, color: AppColors.sageDark, size: 20),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: Theme.of(context).colorScheme.copyWith(
+                                    primary: AppColors.sageDark,
+                                    onPrimary: AppColors.cream,
+                                    surface: AppColors.cream,
+                                    onSurface: AppColors.ink,
+                                  ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _selectedDate = picked;
+                        });
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // List Item-Item Pengeluaran
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _groupItems.length,
+                  itemBuilder: (context, index) {
+                    final item = _groupItems[index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.sand,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.sageDark.withValues(alpha: 0.15),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'ITEM ${index + 1}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.8,
+                                  color: AppColors.sageDark,
+                                ),
+                              ),
+                              // Icon trash hanya untuk item baru yang belum tersimpan (data lama tidak bisa dihapus)
+                              if (_groupItems.length > 1 && item.id == null)
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.expense, size: 20),
+                                  onPressed: () {
+                                    setState(() {
+                                      _groupItems.removeAt(index).dispose();
+                                    });
+                                  },
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: item.titleController,
+                            style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold, fontSize: 15),
+                            decoration: InputDecoration(
+                              labelText: 'Nama Item',
+                              hintText: 'Contoh: Minyak Goreng, Roti, Bensin',
+                              labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                              filled: true,
+                              fillColor: AppColors.cream,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                              ),
+                            ),
+                            validator: (val) => val == null || val.trim().isEmpty ? 'Nama item wajib diisi' : null,
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: item.amountController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [CurrencyInputFormatter()],
+                            style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold, fontSize: 15),
+                            decoration: InputDecoration(
+                              labelText: 'Nominal Item',
+                              prefixText: 'Rp ',
+                              prefixStyle: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                              labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                              filled: true,
+                              fillColor: AppColors.cream,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                              ),
+                            ),
+                            validator: (value) {
+                              final amount = CurrencyInputFormatter.parseAmount(value ?? '');
+                              if (amount <= 0) return 'Masukkan nominal valid (> 0)';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          categoriesAsync.when(
+                            data: (categories) {
+                              final expenseCategories = categories.where((c) => c.type == CategoryType.expense).toList();
+                              return DropdownButtonFormField<Category>(
+                                initialValue: item.category,
+                                dropdownColor: AppColors.cream,
+                                icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.sageDark),
+                                style: const TextStyle(color: AppColors.ink, fontSize: 14, fontWeight: FontWeight.bold),
+                                decoration: InputDecoration(
+                                  labelText: 'Kategori Item',
+                                  labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                                  filled: true,
+                                  fillColor: AppColors.cream,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                                  ),
+                                ),
+                                items: expenseCategories.map((c) {
+                                  return DropdownMenuItem(
+                                    value: c,
+                                    child: Text(c.name, style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  setState(() {
+                                    item.category = val;
+                                  });
+                                },
+                                validator: (val) => val == null ? 'Pilih kategori' : null,
+                              );
+                            },
+                            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.sageDark)),
+                            error: (err, st) => Text('Gagal memuat kategori: $err'),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: item.noteController,
+                            style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                              labelText: 'Catatan Item (opsional)',
+                              labelStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.7), fontWeight: FontWeight.w500),
+                              filled: true,
+                              fillColor: AppColors.cream,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 4),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.sageDark,
+                    side: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.4)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  icon: const Icon(Icons.add_rounded, color: AppColors.sageDark),
+                  label: const Text('+ Tambah Item Belanja', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    setState(() {
+                      _groupItems.add(_GroupExpenseItem());
+                    });
+                  },
+                ),
+              ] else ...[
+                // Form Input Transaksi Tunggal
+                TextFormField(
+                  controller: _titleController,
+                  style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold, fontSize: 16),
+                  decoration: InputDecoration(
+                    labelText: 'Nama Transaksi',
+                    hintText: 'Contoh: Beli Kue, Gaji Bulanan',
+                    labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                    filled: true,
+                    fillColor: AppColors.sand,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                    ),
+                  ),
+                  validator: (value) =>
+                      value == null || value.trim().isEmpty ? 'Nama transaksi wajib diisi' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [CurrencyInputFormatter()],
+                  style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold, fontSize: 16),
+                  decoration: InputDecoration(
+                    labelText: 'Nominal',
+                    labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                    prefixText: 'Rp ',
+                    prefixStyle: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                    filled: true,
+                    fillColor: AppColors.sand,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                    ),
+                  ),
+                  validator: (value) {
+                    final amount = CurrencyInputFormatter.parseAmount(value ?? '');
+                    if (amount <= 0) {
+                      return 'Masukkan nominal yang valid (> 0)';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                categoriesAsync.when(
+                  data: (categories) {
+                    final filteredCategories = categories.where((c) {
+                      final targetType = _selectedType == TransactionType.income
+                          ? CategoryType.income
+                          : CategoryType.expense;
+                      return c.type == targetType;
+                    }).toList();
+
+                    if (_selectedCategory == null && widget.transaction != null) {
+                      try {
+                        _selectedCategory = filteredCategories.firstWhere(
+                          (c) => c.id == widget.transaction!.categoryId,
+                        );
+                      } catch (_) {}
+                    }
+
+                    return DropdownButtonFormField<Category>(
+                      initialValue: _selectedCategory,
+                      dropdownColor: AppColors.sand,
+                      icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.sageDark),
+                      style: const TextStyle(color: AppColors.ink, fontSize: 15, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        labelText: 'Kategori',
+                        labelStyle: const TextStyle(color: AppColors.sageDark, fontWeight: FontWeight.bold),
+                        filled: true,
+                        fillColor: AppColors.sand,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                        ),
+                      ),
+                      items: filteredCategories.map((c) {
+                        return DropdownMenuItem(
+                          value: c,
+                          child: Text(c.name, style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedCategory = val;
+                        });
+                      },
+                      validator: (val) => val == null ? 'Pilih kategori' : null,
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator(color: AppColors.sageDark)),
+                  error: (err, st) => Text('Gagal memuat kategori: $err', style: const TextStyle(color: AppColors.ink)),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.sand,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.sageDark.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                    title: const Text(
+                      'Tanggal Transaksi',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.sageDark,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(
+                      DateUtilsId.formatDateFull(_selectedDate),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    trailing: const Icon(Icons.calendar_today_rounded, color: AppColors.sageDark, size: 20),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: Theme.of(context).colorScheme.copyWith(
+                                    primary: AppColors.sageDark,
+                                    onPrimary: AppColors.cream,
+                                    surface: AppColors.cream,
+                                    onSurface: AppColors.ink,
+                                  ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _selectedDate = picked;
+                        });
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _noteController,
+                  style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    labelText: 'Catatan (opsional)',
+                    labelStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.7), fontWeight: FontWeight.w500),
+                    filled: true,
+                    fillColor: AppColors.sand,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.sageDark.withValues(alpha: 0.15)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: AppColors.sageDark, width: 1.5),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitForm,

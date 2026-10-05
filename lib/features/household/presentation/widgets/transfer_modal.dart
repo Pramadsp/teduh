@@ -97,7 +97,7 @@ class _TransferModalState extends ConsumerState<TransferModal> {
         updatedAt: now,
       );
 
-      // 2. Double-Entry Log: Pemasukan Istri / Pasangan
+      // 2. Double-Entry Log: Pemasukan Penerima
       final txIn = Transaction(
         id: 'tx_trf_in_${now.millisecondsSinceEpoch}',
         title: 'Transfer dari ${senderProfile.displayName}',
