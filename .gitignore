@@ -51,3 +51,6 @@ key.properties
 google-services.json
 .fvm/
 
+# Local AI agent config (jangan di-commit)
+CLAUDE.md
+
